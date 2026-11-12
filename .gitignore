@@ -1,0 +1,49 @@
+# Dependency directories
+node_modules/
+package-lock.json.bak
+
+# Persistent application data and database
+data/
+*.db
+*.db-wal
+*.db-shm
+
+# SSL private keys and certificates
+ssl/
+*.pem
+*.key
+*.crt
+
+# Environment variables & local secrets
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Deployment & archive artifacts
+talkapp-deploy.*
+talkapp-release.*
+*.zip
+*.tar.gz
+
+# Android build outputs & local configuration
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties
+android/.idea/
+android/captures/
+*.apk
+*.aab
+
+# Tauri / Rust build targets
+src-tauri/target/
+
+# OS specific files
+.DS_Store
+Thumbs.db
+desktop.ini

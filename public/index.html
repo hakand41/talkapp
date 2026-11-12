@@ -1,0 +1,2210 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1e1f22">
+  <link rel="manifest" href="manifest.json">
+  <title>TalkApp Pro - Oyuncu Sesli, Görüntülü ve Canlı Mesajlaşma</title>
+  <link rel="stylesheet" href="css/style.css?v=4.9">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Mobile Backdrop for drawer navigation -->
+    <div class="mobile-sidebar-backdrop hidden" id="mobileSidebarBackdrop"></div>
+
+    <!-- Server Rail (Far Left) -->
+    <div class="server-rail">
+      <div class="rail-item-wrap active" id="wrapRailHome">
+        <div class="rail-pill" id="pillRailHome"></div>
+        <button class="rail-btn home-btn" id="btnRailHome" title="Direkt Mesajlar & Arkadaşlar">
+          <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+          </svg>
+          <span class="rail-unread-dot hidden" id="dotHomeUnread"></span>
+        </button>
+      </div>
+
+      <div class="rail-divider"></div>
+
+      <!-- Dynamically Rendered Guild / Server Circles -->
+      <div id="railServersList" style="display:flex; flex-direction:column; gap:8px; width:100%; align-items:center;"></div>
+
+      <div class="rail-item-wrap" style="margin-top:auto; margin-bottom:8px;">
+        <button class="rail-btn add-server-btn" id="btnQuickAddServer" title="Sunucu Oluştur veya Katıl (+)">
+          <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Sidebar: Categorized Channels & User Profile -->
+    <aside class="sidebar">
+      <div class="sidebar-header" id="sidebarHeaderBtn">
+        <div class="server-info-title">
+          <span id="lblServerIcon" style="font-size:18px;">🎮</span>
+          <span id="lblServerName">TalkApp Sunucusu</span>
+        </div>
+        <button class="action-btn" id="btnQuickCreateChannel" title="Yeni Kanal Oluştur" style="width:24px; height:24px; margin-left:auto; font-size:16px;">➕</button>
+        <button class="action-btn" id="btnServerDropdownToggle" title="Sunucu Menüsü" style="width:24px; height:24px; font-size:12px; margin-left:4px;">▼</button>
+        <div class="ping-badge" id="pingBadge" title="Gecikme (Ping)">
+          <span class="ping-dot" id="pingDot"></span>
+          <span id="lblPing">-- ms</span>
+        </div>
+      </div>
+
+      <!-- Server Header Dropdown Menu -->
+      <div class="server-dropdown-menu hidden" id="serverHeaderDropdown">
+        <div class="server-dropdown-item" id="menuItemInvite">
+          <span>🔗 Arkadaşlarını Davet Et</span>
+          <span class="menu-shortcut" id="menuInviteCodeBadge">DAVET</span>
+        </div>
+        <div class="server-dropdown-item" id="menuItemCreateChannel">
+          <span>➕ Kanal Oluştur</span>
+        </div>
+        <div class="server-dropdown-item" id="menuItemServerSettings">
+          <span>⚙️ Sunucu Ayarları</span>
+        </div>
+        <div class="server-dropdown-divider"></div>
+        <div class="server-dropdown-item text-danger" id="menuItemLeaveServer">
+          <span>🚪 Sunucudan Ayrıl</span>
+        </div>
+        <div class="server-dropdown-item text-danger hidden" id="menuItemDeleteServer">
+          <span>🗑️ Sunucuyu Sil</span>
+        </div>
+      </div>
+
+      <!-- Channel Categories Container -->
+      <div class="channel-list" id="channelList">
+        <!-- Rendered dynamically by category -->
+      </div>
+
+      <!-- Active Voice Connection Bar -->
+      <div class="active-voice-bar hidden" id="activeVoiceBar">
+        <div class="voice-status-left">
+          <span class="voice-connected-text">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+            </svg>
+            Ses Bağlandı
+          </span>
+          <span class="voice-current-room" id="lblVoiceCurrentRoom">Genel Ses</span>
+        </div>
+        <button class="btn-voice-hangup" id="btnHangupVoiceBar" title="Sesten Ayrıl">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08a.996.996 0 0 1 0-1.41C2.97 8.98 7.23 7 12 7s9.03 1.98 11.71 4.67c.39.39.39 1.02 0 1.41l-2.48 2.48c-.18.18-.43.29-.71.29s-.52-.11-.7-.28c-.79-.74-1.69-1.36-2.67-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- User Dock (Bottom Left) -->
+      <div class="user-dock">
+        <div class="user-profile" id="btnUserEdit" title="Profil & Hesap">
+          <div class="avatar-wrapper">
+            <div class="avatar" id="myAvatar">O</div>
+            <div class="status-indicator" id="myStatusDot"></div>
+          </div>
+          <div class="user-names">
+            <span class="user-display-name" id="myUsername">Oyuncu</span>
+            <div style="display:flex; align-items:center; gap:4px;">
+              <span class="role-tag role-member" id="myRoleTag">Üye</span>
+              <span class="user-tag" id="myUserId">#0001</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="user-actions">
+          <button class="action-btn" id="btnDockMic" title="Mikrofon (M)">
+            <svg id="iconDockMicOn" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 14.2 14.47 16 12 16s-4.52-1.8-4.93-4.15c-.08-.49-.49-.85-.98-.85-.61 0-1.09.54-1 1.14.49 3 2.89 5.35 5.91 5.78V20c0 .55.45 1 1 1s1-.45 1-1v-2.08c3.02-.43 5.42-2.78 5.91-5.78.1-.6-.39-1.14-1-1.14z"/>
+            </svg>
+            <svg id="iconDockMicOff" class="hidden" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="color:var(--red);">
+              <path d="M19 11h-1.7c0 .74-.16 1.43-.43 2.05l1.23 1.23c.56-.98.9-2.09.9-3.28zm-4.02.17c0-.06.02-.11.02-.17V5c0-1.66-1.34-3-3-3S9 3.34 9 5v.18l5.98 5.99zM4.27 3L3 4.27l6.01 6.01V11c0 1.66 1.33 3 2.99 3 .22 0 .44-.03.65-.08l4.07 4.07c-1.13.73-2.47 1.16-3.92 1.24V21h-2v-1.77c-3.17-.53-5.61-3.08-5.96-6.23H3c.5 4.06 3.73 7.28 7.8 7.73v1.27h2v-1.27c1.81-.2 3.47-.96 4.77-2.11l2.16 2.16 1.27-1.27L4.27 3z"/>
+            </svg>
+          </button>
+
+          <button class="action-btn" id="btnDockDeafen" title="Sağırlaştır (D)">
+            <svg id="iconDockDeafenOff" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 3a9 9 0 0 0-9 9v7c0 1.1.9 2 2 2h4v-8H5v-1a7 7 0 0 1 14 0v1h-4v8h4c1.1 0 2-.9 2-2v-7a9 9 0 0 0-9-9z"/>
+            </svg>
+            <svg id="iconDockDeafenOn" class="hidden" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="color:var(--red);">
+              <path d="M12 4a8 8 0 0 0-8 8v7a1 1 0 0 0 1 1h3v-6H6v-2a6 6 0 0 1 12 0v2h-2v6h3a1 1 0 0 0 1-1v-7a8 8 0 0 0-8-8zm9.7 17.3-20-20L3 0l20 20-1.3 1.3z"/>
+            </svg>
+          </button>
+
+          <button class="action-btn" id="btnSettingsOpen" title="Ayarlar">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Stage Content Area -->
+    <main class="main-stage">
+      <!-- Top Header with Search and Actions -->
+      <header class="top-header">
+        <button class="mobile-menu-btn" id="btnMobileMenuToggle" title="Kanalları & Menüyü Aç">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+
+        <div class="current-channel-info">
+          <span style="color:var(--text-muted); font-size: 20px;" id="headerPrefix">#</span>
+          <span id="lblActiveChannelName">genel-sohbet</span>
+        </div>
+
+        <!-- Full-Text Search Input Bar -->
+        <div class="header-search-bar" id="headerSearchBar">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="var(--text-muted)">
+            <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+          </svg>
+          <input type="text" class="search-input" id="inputSearchMessages" placeholder="Mesaj veya kod ara... (Ctrl + F)" autocomplete="off">
+          
+          <!-- Dropdown Search Results -->
+          <div class="search-results-dropdown" id="searchResultsDropdown"></div>
+        </div>
+
+        <div class="top-header-actions">
+          <!-- DM Direct Call Actions (Visible only in DM chat) -->
+          <div class="dm-call-actions hidden" id="dmCallActions" style="display:flex; gap:6px;">
+            <button class="header-call-btn" id="btnDmVoiceCall" title="Birebir Sesli Arama Başlat">📞 Sesli Ara</button>
+            <button class="header-call-btn" id="btnDmVideoCall" title="Birebir Görüntülü Arama Başlat">📹 Görüntülü Ara</button>
+          </div>
+
+          <!-- Friends Modal Button -->
+          <button class="action-btn" id="btnOpenFriendsModal" title="👥 Arkadaşlar & İstekler">
+            <span style="font-size:16px;">👥</span>
+          </button>
+
+          <!-- Channel Notification Settings Button -->
+          <button class="action-btn" id="btnChannelNotifSettings" title="Kanal Bildirim Tercihleri">
+            <span style="font-size:16px;" id="iconChannelNotif">🔔</span>
+          </button>
+
+          <!-- Channel Notification Preferences Popover -->
+          <div class="channel-notif-popover hidden" id="channelNotifPopover">
+            <div style="font-size:10px; font-weight:700; color:var(--text-muted); padding:2px 8px;">BİLDİRİM AYARI</div>
+            <button class="notif-option-btn selected" data-pref="all">🔔 Tüm Mesajlar</button>
+            <button class="notif-option-btn" data-pref="mentions">💬 Yalnızca Etiketler (@)</button>
+            <button class="notif-option-btn" data-pref="mute">🔕 Sessize Al</button>
+          </div>
+
+          <!-- Auth (Login/Register) Pill Button -->
+          <button class="header-server-tag" id="btnOpenAuthModal" title="Kayıt Ol veya Giriş Yap">
+            <span id="lblAuthStatusText">🔑 Giriş Yap / Kayıt Ol</span>
+          </button>
+
+          <!-- Quick Server Invite Pill -->
+          <button class="header-server-tag" id="btnServerInvite" title="Arkadaşlarını Sunucuya Davet Et">
+            <span>🔗 Davet Et</span>
+          </button>
+
+          <!-- PWA Desktop Install Pill (shown when installable) -->
+          <button class="header-server-tag hidden" id="btnHeaderInstallPwa" style="background:rgba(88,101,242,0.2); color:var(--brand-light); border:1px solid rgba(88,101,242,0.4);" title="TalkApp'i Masaüstüne Kur (PWA)">
+            <span>⬇️ Uygulamayı Kur</span>
+          </button>
+
+          <!-- Pinned Messages Header Button -->
+          <button class="action-btn" id="btnViewPinnedMessages" title="Sabitlenmiş Mesajlar">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/>
+            </svg>
+          </button>
+
+          <!-- Voice Arena Switch Button -->
+          <button class="header-server-tag hidden" id="btnToggleVoiceView" title="Sesli Görüşme Ekranına Geç">
+            <span>🔊 Ses Odasına Geç</span>
+          </button>
+
+          <div class="header-server-tag" id="btnHeaderServer" title="Sunucu Adresi">
+            <span class="ping-dot" id="headerStatusDot"></span>
+            <span id="lblCurrentHostDisplay">localhost:3000</span>
+          </div>
+
+          <!-- Toggle Right Member Sidebar -->
+          <button class="action-btn" id="btnToggleMemberList" title="Üye Listesini Göster/Gizle">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- Stage Split -->
+      <div class="stage-content-wrap">
+        <div class="central-view">
+          
+          <!-- 1. TEXT CHAT VIEW -->
+          <div class="text-chat-view" id="textChatView" style="position:relative;">
+            <!-- Drag & Drop Upload Overlay -->
+            <div class="chat-drop-overlay hidden" id="chatDropOverlay">
+              <div class="chat-drop-box">
+                <span style="font-size:42px;">📂</span>
+                <div style="font-size:16px; font-weight:700; color:var(--text-heading); margin-top:8px;">Dosya veya Görseli Buraya Bırak</div>
+                <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">Sohbete anında eklenecek</div>
+              </div>
+            </div>
+
+            <div class="text-chat-messages" id="textChatMessages"></div>
+
+            <div class="chat-image-preview-bar" id="chatImagePreviewBar">
+              <img src="" class="chat-image-preview-thumb" id="chatImagePreviewThumb" alt="preview">
+              <span style="font-size:12px; color:var(--text-normal);" id="lblChatAttachmentPreview">Görsel eklendi</span>
+              <button class="card-btn" id="btnRemoveImagePreview" style="margin-left:auto;">✕</button>
+            </div>
+
+            <!-- Voice Recording Status Bar -->
+            <div class="voice-recording-bar hidden" id="voiceRecordingBar">
+              <div class="voice-rec-pulse"></div>
+              <span style="font-size:12px; font-weight:600; color:var(--red);">Kayıt yapılıyor...</span>
+              <span class="voice-rec-time" id="voiceRecTime">00:00</span>
+              <div style="margin-left:auto; display:flex; gap:8px;">
+                <button class="btn-cancel-rec" id="btnCancelVoiceRecording" title="Kaydı İptal Et ve Sil">🗑️ İptal Et (Sil)</button>
+                <button class="card-btn btn-primary" id="btnSendVoiceRecording" style="padding:4px 12px; font-size:12px;">✉️ Gönder</button>
+              </div>
+            </div>
+
+            <!-- Reply Status Bar -->
+            <div class="chat-reply-bar hidden" id="chatReplyBar">
+              <span>↩️ Yanıtlanan:</span>
+              <span class="reply-target-name" id="replyTargetName">Kullanıcı</span>
+              <span class="reply-snippet" id="replySnippet">Mesaj metni...</span>
+              <button class="card-btn" id="btnCancelReply" style="margin-left:auto; padding:2px 8px; font-size:11px;">✕ İptal</button>
+            </div>
+
+            <!-- Typing Indicator Bar -->
+            <div class="chat-typing-bar hidden" id="chatTypingBar">
+              <span class="typing-dots"><span></span><span></span><span></span></span>
+              <span class="typing-text" id="typingText"></span>
+            </div>
+
+            <!-- Quick Emoji Picker Popover -->
+            <div class="emoji-picker-popover hidden" id="emojiPickerPopover">
+              <div class="popover-header" style="margin-bottom:8px;">
+                <span>😊 Hızlı Emoji Seç</span>
+                <button type="button" class="card-btn" id="btnCloseEmojiPicker">✕</button>
+              </div>
+              <div class="emoji-picker-grid" id="emojiPickerGrid"></div>
+            </div>
+
+            <div class="chat-input-container">
+              <div class="chat-input-wrapper">
+                <input type="file" id="fileChatAttach" accept="image/*,.cfg,.ini,.txt,.log,.zip,.rar,.7z,.pdf,.json,.csv,.md,.mp3,.wav,.ogg" style="display:none;">
+                <button class="btn-chat-attach" id="btnChatAttach" title="Dosya / Görsel / Config Yükle (veya Sürükle-Bırak)">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                  </svg>
+                </button>
+
+                <textarea class="chat-textarea" id="chatTextarea" placeholder="Mesaj yaz veya /komut kullan (/trivia, /sayi, /kelime, /zar, /anket)..." rows="1"></textarea>
+
+                <button type="button" class="btn-chat-mic" id="btnToggleEmojiPicker" title="Emoji Seç" style="font-size:18px; line-height:1;">
+                  😊
+                </button>
+
+                <button class="btn-chat-mic" id="btnRecordVoiceNote" title="Sesli Mesaj Kaydet">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 14.2 14.47 16 12 16s-4.52-1.8-4.93-4.15c-.08-.49-.49-.85-.98-.85-.61 0-1.09.54-1 1.14.49 3 2.89 5.35 5.91 5.78V20c0 .55.45 1 1 1s1-.45 1-1v-2.08c3.02-.43 5.42-2.78 5.91-5.78.1-.6-.39-1.14-1-1.14z"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. FRIENDS DASHBOARD VIEW (HOME) -->
+          <div class="friends-dashboard-view hidden" id="friendsDashboardView">
+            <!-- Friends View Top Header -->
+            <div class="friends-dash-header">
+              <div class="friends-dash-title">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" style="color:var(--text-muted);">
+                  <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                </svg>
+                <span>Arkadaşlar</span>
+              </div>
+              <div class="friends-header-divider"></div>
+              <div class="friends-header-tabs">
+                <button class="friends-tab-pill active" id="pillFriendsOnline" data-tab="online">Çevrimiçi (<span id="countDashOnline">0</span>)</button>
+                <button class="friends-tab-pill" id="pillFriendsAll" data-tab="all">Tümü (<span id="countDashAll">0</span>)</button>
+                <button class="friends-tab-pill" id="pillFriendsPending" data-tab="pending">Bekleyenler (<span id="countDashPending">0</span>)</button>
+                <button class="friends-tab-pill add-friend-tab" id="pillFriendsAdd" data-tab="add">Arkadaş Ekle</button>
+              </div>
+            </div>
+
+            <!-- Friends Main Stage: Split into List + Active Now Panel -->
+            <div class="friends-dash-body">
+              <!-- Left: Friends Tab Content Area -->
+              <div class="friends-dash-main">
+                <!-- Search bar for filtering existing friends -->
+                <div class="friends-search-box" id="friendsSearchBox">
+                  <input type="text" class="search-input" id="inputFriendsFilter" placeholder="Arkadaş ara... (İsim veya @etiket)">
+                </div>
+
+                <!-- Add Friend Sub-View (visible when "Arkadaş Ekle" tab is active) -->
+                <div class="friends-add-panel hidden" id="friendsAddPanel">
+                  <h3 style="color:var(--text-heading); font-size:16px; margin-bottom:4px;">ARKADAŞ EKLE</h3>
+                  <p style="color:var(--text-muted); font-size:13px; margin-bottom:14px;">Kullanıcı adını girerek arkadaşlarınıza anında istek gönderebilirsiniz.</p>
+                  <div class="friends-add-input-wrapper">
+                    <input type="text" class="friends-add-input" id="inputDashAddFriend" placeholder="Kullanıcı adı girin (Örn: Ahmet)..." autocomplete="off">
+                    <button class="btn-primary" id="btnDashSendFriendReq" style="padding:10px 20px;">İstek Gönder</button>
+                  </div>
+                  <div class="friends-add-status" id="dashAddFriendStatus"></div>
+                </div>
+
+                <!-- Pending Requests Sub-View (visible when "Bekleyenler" tab is active) -->
+                <div class="friends-pending-panel hidden" id="friendsPendingPanel">
+                  <div class="friends-section-title" id="lblPendingCount">BEKLEYEN İSTEKLER - 0</div>
+                  <div class="friends-cards-container" id="friendsPendingContainer"></div>
+                </div>
+
+                <!-- Friends List (Online & All) -->
+                <div class="friends-list-panel" id="friendsListPanel">
+                  <div class="friends-section-title" id="lblFriendsListSectionTitle">ÇEVRİMİÇİ — 0</div>
+                  <div class="friends-cards-container" id="dashFriendsCardsContainer">
+                    <!-- Populated dynamically -->
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right: "Şu An Aktif" (Active Now) Panel -->
+              <aside class="friends-active-now-pane">
+                <h3 class="active-now-title">Şu An Aktif</h3>
+                <div class="active-now-list" id="activeNowList">
+                  <!-- Populated dynamically with friends in voice or playing games -->
+                </div>
+              </aside>
+            </div>
+          </div>
+
+          <!-- 2. VOICE & MULTI-SCREEN ARENA -->
+          <div class="voice-arena hidden" id="voiceArena">
+            <!-- WATCH PARTY (BİRLİKTE YOUTUBE İZLE) -->
+            <div class="watch-party-container hidden" id="watchPartyContainer">
+              <div class="watch-party-header">
+                <div class="watch-party-title">
+                  <span>📺 Birlikte YouTube İzle (Watch Party)</span>
+                  <span class="watch-party-badge" id="lblWatchPartySyncStatus">● Senkronize</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <button type="button" class="card-btn" id="btnWpAudioOnlyToggle" title="Videoyu Gizle / Göster (Sadece Ses Modu)" style="padding:4px 10px; font-size:12px;">🎧 Sadece Ses Modu</button>
+                  <button type="button" class="card-btn" id="btnWpFullscreen" title="Tam Ekran" style="padding:4px 12px; font-size:12px;">⛶ Tam Ekran</button>
+                  <button class="card-btn" id="btnCloseWatchParty" title="Kapat">✕</button>
+                </div>
+              </div>
+              <div class="watch-party-search-bar">
+                <input type="text" class="form-input" id="inputWatchPartyUrl" placeholder="YouTube video bağlantısı girin (örn: https://www.youtube.com/watch?v=...)" style="flex:1;">
+                <button class="btn-primary" id="btnStartWatchPartyVideo" style="padding:6px 16px; font-size:12px;">Başlat ▶</button>
+              </div>
+              <div class="watch-party-presets">
+                <span style="font-size:11px; color:var(--text-muted); align-self:center;">Hazır Videolar:</span>
+                <button type="button" class="preset-pill" data-yt="QdBZY2fkU-0">🎮 GTA VI Fragman</button>
+                <button type="button" class="preset-pill" data-yt="jfKfPfyJRdk">🎵 Lo-Fi Hip Hop</button>
+                <button type="button" class="preset-pill" data-yt="mB9_P6f40s8">🕹️ CS2 Fragmovie</button>
+                <button type="button" class="preset-pill" data-yt="aqz-KE-bpKQ">🍿 Big Buck Bunny</button>
+              </div>
+              <div class="watch-party-player-box" id="watchPartyPlayerBox">
+                <div id="wpAudioOnlyBanner" class="wp-audio-banner hidden">
+                  <div class="music-disc-icon">
+                    <span style="font-size:20px;">🎵</span>
+                  </div>
+                  <div style="flex:1; min-width:0;">
+                    <div style="font-weight:700; font-size:14px; color:var(--text-heading); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" id="lblWpAudioTitle">YouTube Müzik / Video</div>
+                    <div style="font-size:12px; color:var(--brand-light); display:flex; align-items:center; gap:6px; margin-top:4px;">
+                      <span class="audio-equalizer-bars">
+                        <span></span><span></span><span></span><span></span>
+                      </span>
+                      <span>🎧 Sadece Ses Modu Aktif (Video Gizlendi - Kota ve Cihaz Sınırı Engellendi)</span>
+                    </div>
+                  </div>
+                </div>
+                <div id="watchPartyIframeContainer" style="width:100%; height:100%;"></div>
+              </div>
+              <div class="watch-party-controls-bar" style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; padding:0 4px;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <button type="button" class="btn-secondary" id="btnWpRewind" style="padding:4px 12px; font-size:12px;" title="15 Saniye Geri">⏪ -15s</button>
+                  <button type="button" class="btn-primary" id="btnWpTogglePlay" style="padding:4px 18px; font-size:12px;">⏸ Duraklat</button>
+                  <button type="button" class="btn-secondary" id="btnWpForward" style="padding:4px 12px; font-size:12px;" title="15 Saniye İleri">⏩ +15s</button>
+                </div>
+                <div style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text-muted);">
+                  <span>🔊 Ses:</span>
+                  <input type="range" class="form-range" id="sliderWpVolume" min="0" max="100" value="80" style="width:90px;" title="Watch Party Ses Seviyesi">
+                </div>
+              </div>
+            </div>
+
+            <!-- Live WebRTC Connection Quality & Ping HUD -->
+            <div class="voice-rtc-stats-bar" id="voiceRtcStatsBar" style="display:flex; align-items:center; justify-content:space-between; background:rgba(0,0,0,0.3); border:1px solid var(--border-color); border-radius:var(--radius-sm); padding:6px 14px; margin-bottom:10px; font-size:12px;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span class="ping-dot" style="background:#00e676;" id="voiceQualityDot"></span>
+                <span style="font-weight:700; color:var(--text-heading);" id="lblVoiceQualitySummary">WebRTC HD Bağlantı</span>
+                <span class="role-tag" style="background:rgba(88,101,242,0.15); color:var(--brand-light); font-size:10px;" id="lblVoiceCodecBadge">Opus 64k</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:16px; font-size:11px; color:var(--text-muted);">
+                <span>Gecikme: <strong id="lblVoiceRtt" style="color:var(--text-heading);">-- ms</strong></span>
+                <span>Paket Kaybı: <strong id="lblVoiceLoss" style="color:#00e676;">%0</strong></span>
+                <span>Jitter: <strong id="lblVoiceJitter" style="color:var(--text-heading);">-- ms</strong></span>
+              </div>
+            </div>
+
+            <div class="participant-grid" id="participantGrid">
+              <!-- Local Card -->
+              <div class="participant-card" id="card-self">
+                <div class="participant-avatar-large" id="avatarSelfBig">O</div>
+                <video class="video-element" id="videoSelf" autoplay playsinline muted></video>
+                
+                <div class="card-bottom-bar">
+                  <div class="card-name-group">
+                    <span id="nameSelfCard">Sen</span>
+                    <span style="font-size: 10px; color: var(--text-muted);">(Sen)</span>
+                  </div>
+                  <div class="card-controls">
+                    <span class="card-badge-icon" id="badgeMicSelf"></span>
+                    <span class="card-badge-icon screen hidden" id="badgeScreenSelf">📺</span>
+                    <button class="card-btn btn-maximize-card" id="btnMaximizeSelf" title="Ekranı Büyüt / Odakla">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M15 3l2.3 2.3-3.89 3.89 1.41 1.41L18.7 6.7 21 9V3h-6zM3 9l2.3-2.3 3.89 3.89 1.41-1.41L6.7 5.3 9 3H3v6zm6 12l-2.3-2.3 3.89-3.89-1.41-1.41L5.3 17.3 3 15v6h6zm12-6l-2.3 2.3-3.89-3.89-1.41 1.41 3.89 3.89L15 21h6v-6z"/>
+                      </svg>
+                    </button>
+                    <button class="card-btn btn-fullscreen" id="btnFullscreenSelf" title="Tam Ekran">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Soundboard Popover -->
+            <div class="soundboard-popover hidden" id="soundboardPopover">
+              <div class="popover-header">
+                <span>🔊 Ses Panosu (Soundboard)</span>
+                <button class="card-btn" id="btnCloseSoundboard">✕</button>
+              </div>
+              <div class="soundboard-grid" id="defaultSoundboardGrid">
+                <button class="soundboard-btn" data-sound="airhorn">🎺 Airhorn</button>
+                <button class="soundboard-btn" data-sound="gg">🎮 GG Victory</button>
+                <button class="soundboard-btn" data-sound="bruh">💀 Bruh</button>
+                <button class="soundboard-btn" data-sound="coin">🪙 Mario Coin</button>
+                <button class="soundboard-btn" data-sound="laser">⚡ Laser Pew</button>
+                <button class="soundboard-btn" data-sound="badumtss">🥁 Ba-Dum-Tss</button>
+              </div>
+
+              <!-- Custom Sounds Section -->
+              <div class="soundboard-custom-section">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                  <span style="font-size:12px; font-weight:700; color:var(--text-heading);">📂 Özel Seslerin</span>
+                  <button class="card-btn btn-primary" id="btnUploadCustomSound" style="font-size:11px; padding:2px 8px;">➕ Ses Yükle (.mp3/.wav)</button>
+                </div>
+                <input type="file" id="fileCustomSound" accept="audio/mp3,audio/wav,audio/ogg,audio/mpeg" style="display:none;">
+                <div class="soundboard-grid" id="customSoundboardGrid">
+                  <!-- Rendered dynamically -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Music / Radio Bot Popover -->
+            <div class="music-player-popover hidden" id="musicPlayerPopover">
+              <div class="popover-header">
+                <span>🎵 Birlikte Müzik & YouTube Botu</span>
+                <button class="card-btn" id="btnCloseMusicPlayer">✕</button>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Müzik / Radyo / YouTube Yayını</label>
+                <select class="form-select" id="selectRadioStation">
+                  <optgroup label="📻 Popüler Canlı Radyolar">
+                    <option value="https://listen.powerapp.com.tr/powerfm/mpeg/icecast.audio">🔥 Power FM</option>
+                    <option value="https://listen.powerapp.com.tr/powerturk/mpeg/icecast.audio">🇹🇷 Power Türk</option>
+                    <option value="https://stream.radyofenomen.com/fenomen/mpeg/icecast.audio">⚡ Radyo Fenomen</option>
+                    <option value="https://radyo.duhnet.tv/slowturk">❤️ Slow Türk</option>
+                    <option value="https://playerservices.streamtheworld.com/api/livestream-redirect/METRO_FMAAC.aac">🎵 Metro FM</option>
+                    <option value="https://playerservices.streamtheworld.com/api/livestream-redirect/VIRGIN_RADIOAAC.aac">🎸 Virgin Radio Türkiye</option>
+                    <option value="https://playerservices.streamtheworld.com/api/livestream-redirect/JOY_TURKAAC.aac">🎧 Joy Türk</option>
+                    <option value="https://playerservices.streamtheworld.com/api/livestream-redirect/SUPER_FMAAC.aac">🌟 Süper FM</option>
+                    <option value="https://turkmedya.radyotvonline.net/alemfmaac">☕ Alem FM</option>
+                    <option value="https://radyo.duhnet.tv/radyod">📻 Radyo D</option>
+                    <option value="https://listen.powerapp.com.tr/powerpop/mpeg/icecast.audio">🎉 Power Pop</option>
+                    <option value="https://listen.powerapp.com.tr/powerlove/mpeg/icecast.audio">🌹 Power Love</option>
+                  </optgroup>
+                  <optgroup label="🎮 Oyun & Chill / Synthwave">
+                    <option value="https://stream.nightride.fm/nightride.mp3">🌆 Nightride FM (Synthwave / Cyberpunk)</option>
+                    <option value="https://stream.radioparadise.com/mp3-128">☕ Radio Paradise (Chill & Eclectic)</option>
+                  </optgroup>
+                  <optgroup label="📺 YouTube Canlı Yayınları">
+                    <option value="https://www.youtube.com/watch?v=jfKfPfyJRdk">☕ Lofi Girl - Beats to relax/study</option>
+                    <option value="https://www.youtube.com/watch?v=4xDzrJKXOOY">🏎️ Synthwave Radio - ChillSynth</option>
+                  </optgroup>
+                  <option value="custom">🔗 YouTube / YT Music URL veya Özel MP3 Akışı...</option>
+                </select>
+                <input type="text" class="form-input hidden" id="inputCustomMusicUrl" placeholder="YouTube linki (örn: https://youtu.be/...) veya MP3 URL'si" style="margin-top:6px;">
+              </div>
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+                <button class="btn-primary" id="btnToggleMusicPlay" style="flex:1;">▶ Odaya Müzik Başlat</button>
+                <div class="volume-slider-wrapper" title="Bot Ses Düzeyi">
+                  <input type="range" class="volume-slider" id="musicBotVolume" min="0" max="100" value="50">
+                </div>
+              </div>
+              <!-- Music Bot Audio-Only Status Card (No Video Screen) -->
+              <div id="musicBotYtContainer" class="hidden" style="margin-top:10px;"></div>
+            </div>
+
+            <!-- Screen Quality Popover -->
+            <div class="screen-quality-popover hidden" id="screenQualityPopover">
+              <div style="font-weight:700; font-size:13px; color:var(--text-heading); display:flex; justify-content:space-between; align-items:center;">
+                <span>📺 Ekran Paylaşım Kalitesi</span>
+                <button class="card-btn" id="btnCloseScreenQuality">✕</button>
+              </div>
+              <div class="screen-quality-grid">
+                <button class="screen-quality-btn" data-fps="60" data-width="1920" data-height="1080">
+                  <div>
+                    <div style="font-weight:700; font-size:13px;">⚡ Oyun / Ultra Akıcı</div>
+                    <div style="font-size:11px; color:var(--text-muted);">1080p 60 FPS (Yüksek Kalite)</div>
+                  </div>
+                  <span style="font-size:16px;">🎮</span>
+                </button>
+                <button class="screen-quality-btn" data-fps="30" data-width="1920" data-height="1080">
+                  <div>
+                    <div style="font-weight:700; font-size:13px;">⚖️ Standart / Dengeli</div>
+                    <div style="font-size:11px; color:var(--text-muted);">1080p 30 FPS</div>
+                  </div>
+                  <span style="font-size:16px;">📺</span>
+                </button>
+                <button class="screen-quality-btn" data-fps="30" data-width="1280" data-height="720">
+                  <div>
+                    <div style="font-weight:700; font-size:13px;">🍃 Performans / Düşük Tüketim</div>
+                    <div style="font-size:11px; color:var(--text-muted);">720p 30 FPS (Düşük RAM/CPU)</div>
+                  </div>
+                  <span style="font-size:16px;">🚀</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Floating In-Call Bar -->
+            <div class="floating-call-bar">
+              <button class="call-control-btn" id="btnCallMic" title="Mikrofon Aç/Kapat">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zM17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                </svg>
+                <span id="lblBtnMic">Mikrofon</span>
+              </button>
+
+              <button class="call-control-btn" id="btnCallCamera" title="Kamera Aç/Kapat">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/>
+                </svg>
+                <span id="lblBtnCamera">Kamera</span>
+              </button>
+
+              <button class="call-control-btn" id="btnCallScreen" title="Ekran Paylaş">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M20 18c1.1 0 1.99-.9 1.99-2L22 6c0-1.11-.9-2-2-2H4c-1.11 0-2 .89-2 2v10c0 1.1.89 2 2 2H0v2h24v-2h-4zM4 6h16v10H4V6z"/>
+                </svg>
+                <span id="lblBtnScreen">Ekran</span>
+              </button>
+
+              <button class="call-control-btn" id="btnCallSoundboard" title="Ses Panosu">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+                </svg>
+                <span>Soundboard</span>
+              </button>
+
+              <!-- Music Bot Button -->
+              <button class="call-control-btn" id="btnCallMusicBot" title="Birlikte Müzik Dinle">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 3v9.28c-.47-.17-.97-.28-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z"/>
+                </svg>
+                <span>Müzik Botu</span>
+              </button>
+
+              <!-- Watch Party Button -->
+              <button class="call-control-btn" id="btnCallWatchParty" title="Birlikte YouTube İzle (Watch Party)">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M21.58 7.19c-.23-.86-.91-1.54-1.77-1.77C18.25 5 12 5 12 5s-6.25 0-7.81.42c-.86.23-1.54.91-1.77 1.77C2 8.75 2 12 2 12s0 3.25.42 4.81c.23.86.91 1.54 1.77 1.77C5.75 19 12 19 12 19s6.25 0 7.81-.42c.86-.23 1.54-.91 1.77-1.77C22 15.25 22 12 22 12s0-3.25-.42-4.81zM10 15V9l5.2 3-5.2 3z"/>
+                </svg>
+                <span>Watch Party</span>
+              </button>
+
+              <!-- Quick Chat Switch Button -->
+              <button class="call-control-btn" id="btnCallQuickChat" title="Sohbet Ekranına Geç (Ses Kopmadan)">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
+                </svg>
+                <span>Sohbet</span>
+              </button>
+
+              <button class="call-control-btn" id="btnCallDeafen" title="Sağırlaştır">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 3a9 9 0 0 0-9 9v7c0 1.1.9 2 2 2h4v-8H5v-1a7 7 0 0 1 14 0v1h-4v8h4c1.1 0 2-.9 2-2v-7a9 9 0 0 0-9-9z"/>
+                </svg>
+                <span id="lblBtnDeafen">Kulaklık</span>
+              </button>
+
+              <button class="call-control-btn disconnect-btn" id="btnCallDisconnect" title="Kanaldan Ayrıl">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08a.996.996 0 0 1 0-1.41C2.97 8.98 7.23 7 12 7s9.03 1.98 11.71 4.67c.39.39.39 1.02 0 1.41l-2.48 2.48c-.18.18-.43.29-.71.29s-.52-.11-.7-.28c-.79-.74-1.69-1.36-2.67-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/>
+                </svg>
+                <span>Ayrıl</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- THREAD / MESAJ KONUSU SIDEBAR -->
+        <aside class="chat-thread-sidebar hidden" id="chatThreadSidebar">
+          <div class="thread-header">
+            <span>🗂️ Mesaj Konusu (Thread)</span>
+            <button class="card-btn" id="btnCloseThreadSidebar" title="Kapat">✕</button>
+          </div>
+          <div class="thread-parent-card" id="threadParentCard"></div>
+          <div class="thread-messages-list" id="threadMessagesList"></div>
+          <div class="thread-input-box">
+            <textarea id="threadTextarea" placeholder="Konuya yanıt yaz..." rows="1"></textarea>
+            <button class="btn-primary" id="btnSendThreadMsg" style="padding:6px 14px; font-size:12px;">Gönder</button>
+          </div>
+        </aside>
+
+        <!-- RIGHT MEMBER SIDEBAR -->
+        <aside class="member-sidebar" id="memberSidebar"></aside>
+      </div>
+    </main>
+  </div>
+
+  <!-- MINI PiP OVERLAY -->
+  <div class="mini-pip-overlay hidden" id="miniPipOverlay">
+    <div class="mini-pip-overlay-title">
+      <span>🎮 Oyun İçi Ses</span>
+      <button class="card-btn" id="btnCloseMiniPip" style="font-size:10px;">✕</button>
+    </div>
+    <div class="mini-pip-speakers-list" id="miniPipSpeakersList"></div>
+  </div>
+
+  <!-- MODAL: HESAP (KAYIT OL & GİRİŞ YAP & HESAP YÖNETİMİ) -->
+  <div class="modal-backdrop" id="modalAuth">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title" id="lblAuthModalTitle">🔐 Kalıcı Hesap Girişi</h3>
+        <button class="modal-close-btn" id="btnCloseAuthModal">✕</button>
+      </div>
+
+      <!-- State 1: Giriş / Kayıt Formu (Misafirler için) -->
+      <div class="modal-body" id="authFormSection">
+        <div style="display:flex; gap:10px; margin-bottom:12px;">
+          <button class="btn-primary" id="btnAuthTabLogin" style="flex:1;">Giriş Yap</button>
+          <button class="btn-secondary" id="btnAuthTabRegister" style="flex:1; background:var(--bg-secondary);">Kayıt Ol</button>
+        </div>
+
+        <div class="auth-error-banner hidden" id="authErrorBanner" style="background:rgba(242,63,67,0.15); border:1px solid var(--red); color:var(--red); padding:8px 12px; border-radius:var(--radius-sm); font-size:12px; font-weight:600; margin-bottom:12px;"></div>
+
+        <div class="form-group">
+          <label class="form-label">Kullanıcı Adı</label>
+          <input type="text" class="form-input" id="inputAuthUsername" placeholder="Kullanıcı adınızı girin" maxlength="32" autocomplete="username">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Şifre</label>
+          <div style="position:relative;">
+            <input type="password" class="form-input" id="inputAuthPassword" placeholder="Şifrenizi girin (en az 4 karakter)" autocomplete="current-password" style="padding-right:40px;">
+            <button type="button" id="btnTogglePasswordVis" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:16px;" title="Şifreyi Göster/Gizle">👁️</button>
+          </div>
+        </div>
+
+        <div style="font-size:12px; color:var(--text-muted); line-height:1.4;">
+          💡 <strong>Not:</strong> Kayıtlı hesap ile girdiğinizde rolleriniz, profil durumunuz, arkadaş listeniz ve DM geçmişiniz SQLite veritabanında kalıcı olarak saklanır.
+        </div>
+      </div>
+
+      <!-- State 2: Giriş Yapılmış Hesap Görünümü (Oturumu Açık Olanlar için) -->
+      <div class="modal-body hidden" id="authLoggedInSection">
+        <div style="display:flex; align-items:center; gap:16px; background:var(--bg-secondary); padding:16px; border-radius:var(--radius-md); border:1px solid var(--border-color); margin-bottom:14px;">
+          <div class="avatar" id="authCurrentAvatar" style="width:52px; height:52px; font-size:22px;">O</div>
+          <div style="overflow:hidden; flex:1;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:16px; font-weight:700; color:var(--text-heading);" id="authCurrentUsername">Oyuncu</span>
+              <span class="role-tag" id="authCurrentRoleTag">ÜYE</span>
+            </div>
+            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;" id="authCurrentUserId">#0000</div>
+            <div style="font-size:11px; color:var(--green); font-weight:600; margin-top:4px;">● SQLite Kalıcı Hesap Aktif</div>
+          </div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <button class="btn-secondary" id="btnAuthSwitchAccount" style="background:var(--bg-secondary); border:1px solid var(--border-color); width:100%; padding:10px;">
+            🔄 Başka Bir Hesaba Geçiş Yap
+          </button>
+          <button class="btn-secondary" id="btnAuthLogout" style="background:rgba(242,63,67,0.15); border:1px solid rgba(242,63,67,0.3); color:var(--red); width:100%; padding:10px;">
+            🚪 Oturumu Kapat (Çıkış Yap)
+          </button>
+        </div>
+      </div>
+
+      <div class="modal-footer" id="authFormFooter">
+        <button class="btn-secondary" id="btnCancelAuth">Vazgeç</button>
+        <button class="btn-primary" id="btnSubmitAuth">Giriş Yap</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: SABİTLENMİŞ MESAJLAR -->
+  <div class="modal-backdrop" id="modalPinnedMessages">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title">📌 Sabitlenmiş Mesajlar</h3>
+        <button class="modal-close-btn" id="btnClosePinnedModal">✕</button>
+      </div>
+      <div class="modal-body" id="pinnedMessagesList"></div>
+    </div>
+  </div>
+
+  <!-- MODAL: KANAL OLUŞTURMA (Kategori Seçimli) -->
+  <div class="modal-backdrop" id="modalCreateChannel">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title">➕ Yeni Kanal Oluştur</h3>
+        <button class="modal-close-btn" id="btnCloseCreateChannelModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Kanal Türü</label>
+          <div style="display:flex; gap:12px;">
+            <label class="checkbox-group">
+              <input type="radio" name="newChannelType" value="text" id="radioTypeChat" checked>
+              <span class="checkbox-label">💬 Metin Kanalı (#)</span>
+            </label>
+            <label class="checkbox-group">
+              <input type="radio" name="newChannelType" value="voice" id="radioTypeVoice">
+              <span class="checkbox-label">🔊 Ses Kanalı</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Kategori</label>
+          <select class="form-select" id="selectChannelCategory">
+            <option value="GENEL SOHBET">💬 GENEL SOHBET</option>
+            <option value="OYUN ODALARI">🎮 OYUN ODALARI</option>
+            <option value="YÖNETİM & VIP">👑 YÖNETİM & VIP</option>
+            <option value="custom">➕ Yeni Kategori Adı Yaz...</option>
+          </select>
+          <input type="text" class="form-input hidden" id="inputCustomCategory" placeholder="Örn: TOURNAMENT veya CLAN" style="margin-top:6px;">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Kanal Adı</label>
+          <input type="text" class="form-input" id="inputNewChannelName" placeholder="Örn: takım-sohbeti" maxlength="32">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Rol & Erişim İzni</label>
+          <select class="form-select" id="selectChannelMinRole">
+            <option value="member">🌐 Herkese Açık</option>
+            <option value="vip">💎 VIP ve Üzeri</option>
+            <option value="mod">🛡️ Moderatör ve Üzeri</option>
+            <option value="admin">👑 Sadece Sunucu Yöneticisi</option>
+          </select>
+        </div>
+
+        <div class="form-group hidden" id="voiceUserLimitGroup">
+          <label class="form-label">👥 Ses Odası Kişi Sınırı (Kapasite)</label>
+          <select class="form-select" id="selectVoiceUserLimit">
+            <option value="0">♾️ Sınırsız (Varsayılan)</option>
+            <option value="2">👥 2 Kişilik (Duo)</option>
+            <option value="4">🎮 4 Kişilik (Squad)</option>
+            <option value="5">🕹️ 5 Kişilik (5v5 Takım)</option>
+            <option value="8">🎉 8 Kişilik (Parti)</option>
+            <option value="12">🏟️ 12 Kişilik (Lobi)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="checkbox-group">
+            <input type="checkbox" id="chkProtectPassword">
+            <span class="checkbox-label">🔑 Bu Odayı Şifre ile Koru</span>
+          </label>
+          <input type="password" class="form-input hidden" id="inputChannelPassword" placeholder="Oda Şifresi / PIN belirleyin" style="margin-top:6px;">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="btnCancelCreateChannel">Vazgeç</button>
+        <button class="btn-primary" id="btnConfirmCreateChannel">Kanalı Oluştur</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ÇOK SEKMELİ GELİŞMİŞ AYARLAR -->
+  <div class="modal-backdrop" id="modalSettings">
+    <div class="settings-modal-box" style="position:relative;">
+      <button class="modal-close-btn" id="btnCloseSettingsModal" style="position:absolute; top:14px; right:16px; z-index:100;" title="Kapat">✕</button>
+      <div class="settings-sidebar">
+        <div class="settings-sidebar-heading">Kullanıcı Ayarları</div>
+        <button class="settings-tab-btn active" data-tab="tab-audio">🎙️ Ses & Mikrofon</button>
+        <button class="settings-tab-btn" data-tab="tab-shortcuts">⌨️ Tuş Kısayolları</button>
+        <button class="settings-tab-btn" data-tab="tab-effects">🎭 Ses Efektleri & Bot</button>
+        <button class="settings-tab-btn" data-tab="tab-profile">👤 Profil & Görünüm</button>
+        <button class="settings-tab-btn" data-tab="tab-gaming">🎮 Oyun & Araçlar</button>
+
+        <div class="settings-sidebar-heading" id="secAdminHeader">Sunucu Yönetimi</div>
+        <button class="settings-tab-btn" data-tab="tab-backup" id="btnTabBackup">🏛️ Sunucu & Yedek</button>
+        <button class="settings-tab-btn" data-tab="tab-permissions" id="btnTabPermissions">🛡️ Rol & İzin Matrisi</button>
+        <button class="settings-tab-btn" data-tab="tab-audit" id="btnTabAudit">📜 Denetim Kaydı</button>
+        <button class="settings-tab-btn" data-tab="tab-webhooks">📡 Oyun Webhook'ları</button>
+      </div>
+
+      <div class="settings-content-area">
+        <!-- 1. SES & MİKROFON -->
+        <div class="settings-tab-panel" id="tab-audio">
+          <div style="display:flex; align-items:center; justify-content:space-between;">
+            <div>
+              <h3 class="modal-title" style="margin:0;">🎙️ Ses & Mikrofon Ayarları</h3>
+              <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">Giriş ve çıkış cihazlarınızı yapılandırın, sesinizi test edin.</div>
+            </div>
+            <span class="role-tag role-vip" style="background:rgba(88,101,242,0.15); color:var(--brand-light);">Opus 48kHz HD</span>
+          </div>
+
+          <!-- Aygıt Seçimi (2 Sütun) -->
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+            <div class="form-group">
+              <label class="form-label">🎙️ Giriş Aygıtı (Mikrofon)</label>
+              <select class="form-select" id="selectInputDevice"><option value="">Varsayılan Mikrofon</option></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">🎧 Çıkış Aygıtı (Hoparlör / Kulaklık)</label>
+              <select class="form-select" id="selectOutputDevice"><option value="">Varsayılan Ses Çıkışı</option></select>
+            </div>
+          </div>
+
+          <!-- Canlı Mikrofon Testi -->
+          <div class="audio-control-card">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+              <span style="font-size:13px; font-weight:700; color:var(--text-heading);">🎧 Canlı Mikrofon Seviyesi & Gürültü Testi</span>
+              <button type="button" class="btn-secondary" id="btnToggleMicTest" style="background:var(--bg-secondary); border:1px solid var(--border-color); padding:5px 14px; font-size:12px;">
+                ▶ Sesimi Test Et (Canlı Dinle)
+              </button>
+            </div>
+
+            <div class="db-meter-wrapper">
+              <div class="db-meter-bar-container">
+                <div class="db-meter-level" id="dbMeterLevel"></div>
+                <div class="db-threshold-marker" id="dbThresholdMarker" title="Gürültü Kapısı Eşiği" style="left: 35%;"></div>
+              </div>
+              <div class="db-meter-labels">
+                <span>-60 dB</span>
+                <span>-45 dB</span>
+                <span>-30 dB</span>
+                <span>-15 dB</span>
+                <span>0 dB</span>
+              </div>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px; font-size:11px; color:var(--text-muted);">
+              <span>Anlık Giriş: <strong id="lblCurrentDb" style="color:var(--text-heading);">-∞ dB</strong></span>
+              <span>Kapı Durumu: <strong id="lblGateState" style="color:var(--red);">KAPALI (Sessiz)</strong></span>
+            </div>
+          </div>
+
+          <!-- Ses Giriş Modu -->
+          <div class="form-group">
+            <label class="form-label">Ses İletim Modu</label>
+            <div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap;">
+              <label class="checkbox-group">
+                <input type="radio" name="inputMode" value="vad" id="radioVad" checked>
+                <span class="checkbox-label" style="font-weight:600;">🎙️ Ses Algılama (Konuşunca Otomatik Açar)</span>
+              </label>
+              <label class="checkbox-group">
+                <input type="radio" name="inputMode" value="ptt" id="radioPtt">
+                <span class="checkbox-label" style="font-weight:600;">🗣️ Bas-Konuş (PTT)</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Desibel Gürültü Kapısı (Noise Gate) Eşiği -->
+          <div class="form-group" id="groupNoiseGate">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <label class="form-label" style="margin:0;">🎚️ Gürültü Kapısı Eşiği (Noise Gate)</label>
+              <span id="lblNoiseGateValue" style="font-size:12px; font-weight:700; color:var(--brand-light);">-65 dB</span>
+            </div>
+            <input type="range" class="form-range" id="sliderNoiseGate" min="-80" max="-30" value="-65" step="1" style="margin-top:6px;">
+            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">
+              Bu desibelin altındaki klavye tıkırtısı, kasa fanı ve fısıltılar sese aktarılmaz.
+            </div>
+          </div>
+
+          <!-- Mikrofon Kazancı (Gain Booster) -->
+          <div class="form-group">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <label class="form-label" style="margin:0;">🎙️ Mikrofon Kazancı / Güçlendirici (Mic Boost)</label>
+              <span id="lblMicGainValue" style="font-size:12px; font-weight:700; color:var(--brand-light);">0 dB</span>
+            </div>
+            <input type="range" class="form-range" id="sliderMicGain" min="-12" max="18" value="0" step="1" style="margin-top:6px;">
+            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">
+              Kısık sesli mikrofonları ses kartına ihtiyaç duymadan yazılımsal olarak yükseltir.
+            </div>
+          </div>
+
+          <!-- Ses İletim Kalitesi & Bitrate -->
+          <div class="form-group">
+            <label class="form-label">📶 Ses İletim Kalitesi (WebRTC Bitrate)</label>
+            <select class="form-select" id="selectVoiceBitrate">
+              <option value="32">⚡ Düşük Bant Genişliği (32 kbps - Mobil / Zayıf İnternet)</option>
+              <option value="64" selected>🎮 Standart Kalite (64 kbps - Dengeli Opus HD Standardı)</option>
+              <option value="128">💎 Yüksek Kalite (128 kbps - Kristal Netlik)</option>
+              <option value="256">🎙️ Stüdyo & Müzik (256 kbps - Kayıpsıza Yakın Ultra HD)</option>
+            </select>
+          </div>
+
+          <!-- Hazır Ön Ayarlar (Presets) -->
+          <div class="form-group">
+            <label class="form-label">🎯 Hazır Ses Profilleri</label>
+            <div class="audio-preset-chips" id="audioPresetChips">
+              <button type="button" class="preset-chip active" data-preset="competitive">
+                <span class="chip-icon">🎮</span>
+                <span class="chip-title">Rekabetçi Oyun</span>
+                <span class="chip-desc">Agresif klavye/fan filtresi</span>
+              </button>
+              <button type="button" class="preset-chip" data-preset="podcast">
+                <span class="chip-icon">🎙️</span>
+                <span class="chip-title">Yayıncı / Podcast</span>
+                <span class="chip-desc">Kristal vokal & sıcak ton</span>
+              </button>
+              <button type="button" class="preset-chip" data-preset="raw">
+                <span class="chip-icon">⚡</span>
+                <span class="chip-title">Saf & Hafif</span>
+                <span class="chip-desc">Sıfır işlemci, doğal giriş</span>
+              </button>
+              <button type="button" class="preset-chip" data-preset="custom">
+                <span class="chip-icon">⚙️</span>
+                <span class="chip-title">Özel Ayar</span>
+                <span class="chip-desc">Manuel yapılandırma</span>
+              </button>
+            </div>
+          </div>
+          <!-- Yapay Zeka Destekli Gürültü Engelleme (Akıllı DSP Filtresi) -->
+          <div style="background:var(--bg-tertiary); border:1px solid var(--border-color); border-radius:8px; padding:14px; margin-top:16px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+              <div style="display:flex; align-items:center; gap:12px; flex:1; min-width:240px;">
+                <div style="font-size:26px; line-height:1;">🤖</div>
+                <div>
+                  <div style="font-size:13px; font-weight:700; color:var(--text-heading); display:flex; align-items:center; gap:6px;">
+                    <span>Yapay Zeka Destekli Gürültü Engelleme</span>
+                    <span class="role-tag" style="background:rgba(88,101,242,0.15); color:var(--brand-light); font-size:10px; padding:2px 6px;">AI DSP</span>
+                  </div>
+                  <div style="font-size:11px; color:var(--text-muted); margin-top:3px;">
+                    Mekanik klavye seslerini, cips hışırtısını ve arka plan uğultularını konuşma sesini bozmadan gerçek zamanlı yok eder.
+                  </div>
+                </div>
+              </div>
+              <label class="toggle-switch" title="Yapay zeka gürültü engellemesini aç veya kapat">
+                <input type="checkbox" id="chkAiNoiseSuppression">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. TUŞ KISAYOLLARI & COMPANION -->
+        <div class="settings-tab-panel hidden" id="tab-shortcuts">
+          <div style="display:flex; align-items:center; justify-content:space-between;">
+            <div>
+              <h3 class="modal-title" style="margin:0;">⌨️ Tuş Kısayolları & Oyun İçi Yakalama</h3>
+              <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">Oyun oynarken veya masaüstündeyken TalkApp'i kontrol edin.</div>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span id="lblShortcutsMasterBadge" class="shortcut-status-badge active">🟢 Kısayollar Aktif</span>
+              <label class="toggle-switch" title="Tüm kısayolları tek tıkla aç veya kapat">
+                <input type="checkbox" id="chkShortcutsMaster" checked>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <!-- TALKAPP COMPANION (OYUN İÇİ TUŞ YAKALAMA) ÖNE ÇIKAN KART -->
+          <div class="companion-card">
+            <div class="companion-header">
+              <div class="companion-title-group">
+                <div class="companion-icon-box">🎮</div>
+                <div>
+                  <div class="companion-title">TalkApp Masaüstü Yardımcısı (Oyun İçi Tuş Yakalama)</div>
+                  <div class="companion-desc">Valorant, CS2, LoL oynarken veya sekme arkadayken Bas-Konuş & Bas-Sustur tuşlarının çalışmasını sağlar.</div>
+                </div>
+              </div>
+              <span id="badgeCompanionStatus" class="shortcut-status-badge inactive">⚪ Masaüstü Yardımcısı: Bekleniyor</span>
+            </div>
+
+            <div class="companion-action-row">
+              <a href="/downloads/talkapp-companion.exe" download class="btn-primary" id="btnDownloadCompanion" style="display:inline-flex; align-items:center; gap:6px; padding:7px 14px; font-size:12px; text-decoration:none;">
+                <span>⬇️</span>
+                <span>Companion'ı İndir (.exe - 28 KB)</span>
+              </a>
+
+              <div class="companion-token-box" title="Bu sizin kişisel eşleşme kodunuzdur">
+                <span style="font-size:11px; color:var(--text-muted);">Eşleşme Kodu:</span>
+                <input type="text" id="inputCompanionToken" class="companion-token-input" readonly value="TK-......">
+                <button type="button" class="btn-secondary" id="btnCopyCompanionToken" style="padding:3px 8px; font-size:11px; background:var(--bg-secondary); border:1px solid var(--border-color);">📋 Kopyala</button>
+              </div>
+
+              <button type="button" class="btn-secondary" id="btnPairCompanionLocal" style="padding:6px 12px; font-size:12px; background:var(--bg-secondary); border:1px solid var(--border-color);" title="Bilgisayarınızda açık olan Companion ile otomatik eşleş">
+                ⚡ Yerel Otomatik Eşleş
+              </button>
+            </div>
+            <div style="font-size:11px; color:var(--text-muted); line-height:1.4;">
+              💡 <strong>Nasıl Çalışır?</strong> İndirip açtığınızda saat yanında sessizce çalışır (~1 MB RAM). Vanguard / VAC gibi hile korumalarını tetiklemez. Farenizin yan tuşları (Mouse 4/5) veya CapsLock gibi tuşları oyun içinden anında dinler.
+            </div>
+          </div>
+
+          <!-- Kısayol Kartları -->
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <!-- Bas-Konuş Tuşu -->
+            <div class="shortcut-card hidden" id="boxPttKeyBind">
+              <div class="shortcut-card-left">
+                <div class="shortcut-card-title-row">
+                  <span class="shortcut-card-title">🗣️ Bas-Konuş (PTT) Tuşu</span>
+                  <span class="shortcut-status-badge active">🟢 Aktif Mod</span>
+                </div>
+                <div class="shortcut-card-desc">Basılı tuttuğunuz sürece mikrofonunuz açık kalır. Tuşu değiştirmek için butona tıklayın.</div>
+                <label class="checkbox-group" style="margin-top:6px; font-size:11px;">
+                  <input type="checkbox" id="chkPttSoundEnabled">
+                  <span class="checkbox-label" style="color:var(--text-muted);">Bas-Konuş basma/bırakma sesli bildirimi (Varsayılan: Kapalı)</span>
+                </label>
+              </div>
+              <div class="shortcut-card-right">
+                <button type="button" class="btn-ptt-key" id="btnBindPttKey">Space</button>
+              </div>
+            </div>
+
+            <!-- Bas-Sustur Kısayolu (Varsayılan Pasif) -->
+            <div class="shortcut-card disabled" id="cardPtm">
+              <div class="shortcut-card-left">
+                <div class="shortcut-card-title-row">
+                  <span class="shortcut-card-title">🤫 Bas-Sustur (PTM) Tuşu</span>
+                  <span class="shortcut-status-badge inactive" id="badgePtmStatus">⚪ Pasif</span>
+                </div>
+                <div class="shortcut-card-desc">Tuşa basıldığında mikrofonu susturur, tekrar basana kadar kapalı tutar. İstenmeyen ses kesilmelerini önlemek için varsayılan pasiftir.</div>
+              </div>
+              <div class="shortcut-card-right">
+                <button type="button" class="btn-ptt-key" id="btnBindPtmKey" disabled title="Tuşu değiştirmek için tıklayın">KeyV</button>
+                <label class="toggle-switch" title="Bas-Sustur kısayolunu aç veya kapat">
+                  <input type="checkbox" id="chkPtmEnabled">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Mikrofon Aç/Kapat Kısayolu (Varsayılan Pasif) -->
+            <div class="shortcut-card disabled" id="cardMuteToggle">
+              <div class="shortcut-card-left">
+                <div class="shortcut-card-title-row">
+                  <span class="shortcut-card-title">🔇 Mikrofon Aç/Kapat Tuşu</span>
+                  <span class="shortcut-status-badge inactive" id="badgeMuteToggleStatus">⚪ Pasif</span>
+                </div>
+                <div class="shortcut-card-desc">Tek basışta mikrofonu tamamen kapatır veya açar. Oyun esnasında yanlışlıkla basılmaması için varsayılan pasiftir.</div>
+              </div>
+              <div class="shortcut-card-right">
+                <button type="button" class="btn-ptt-key" id="btnBindMuteToggleKey" disabled title="Tuşu değiştirmek için tıklayın">KeyM</button>
+                <label class="toggle-switch" title="Mikrofon aç/kapat kısayolunu aç veya kapat">
+                  <input type="checkbox" id="chkMuteToggleEnabled">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Kulaklık Kapat / Sağırlaştır ('D' Tuşu - Varsayılan Pasif) -->
+            <div class="shortcut-card disabled" id="cardDeafen">
+              <div class="shortcut-card-left">
+                <div class="shortcut-card-title-row">
+                  <span class="shortcut-card-title">🎧 Kulaklık Kapat / Sağırlaştır ('D' Tuşu)</span>
+                  <span class="shortcut-status-badge inactive" id="badgeDeafenStatus">⚪ Pasif</span>
+                </div>
+                <div class="shortcut-card-desc">Oyunlarda (WASD) sağa gitme tuşu olan 'D' tuşunun karışmaması ve sesin kesilmemesi için varsayılan pasiftir.</div>
+              </div>
+              <div class="shortcut-card-right">
+                <button type="button" class="btn-ptt-key" id="btnBindDeafenKey" disabled title="Tuşu değiştirmek için tıklayın">KeyD</button>
+                <label class="toggle-switch" title="Kulaklık kapatma kısayolunu aç veya kapat">
+                  <input type="checkbox" id="chkDeafenEnabled">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mikrofon Bildirim Sesi -->
+          <div style="padding:12px 14px; background:var(--bg-tertiary); border-radius:var(--radius-sm); border:1px solid var(--border-color); display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+            <div style="flex:1; min-width:200px;">
+              <div style="font-size:12px; font-weight:700; color:var(--text-heading);">🔊 Mikrofon Açıldı / Kapandı Sesli Bildirimi</div>
+              <div style="font-size:11px; color:var(--text-muted);">Kısayolla mikrofon açılıp kapandığında çalınacak uyarı sesi</div>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <select class="form-select" id="selectMicNotifSound" style="width:auto; min-width:210px; font-size:12px; padding:6px 10px;">
+                <option value="voice_and_chime">🗣️ Sesli Uyarı ("Mikrofon Açıldı/Kapandı") + Bip</option>
+                <option value="voice">🗣️ Sadece Türkçe Sesli ("Mikrofon Açıldı/Kapandı")</option>
+                <option value="chime">🔔 Sadece Çift Tonlu Bip Sesi</option>
+                <option value="off">🔕 Kapalı</option>
+              </select>
+              <button type="button" class="btn-secondary" id="btnTestMicNotifSound" style="background:var(--bg-secondary); border:1px solid var(--border-color); padding:6px 10px; font-size:11px; white-space:nowrap;" title="Sesi Test Et">🔊 Test Et</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. SES EFEKTLERİ & GELİŞMİŞ -->
+        <div class="settings-tab-panel hidden" id="tab-effects">
+          <div style="display:flex; align-items:center; justify-content:space-between;">
+            <div>
+              <h3 class="modal-title" style="margin:0;">🎭 Ses Efektleri, Müzik & DSP Filtreleri</h3>
+              <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">Gerçek zamanlı ses modülasyonu, müzik ducking ve stüdyo kalkanı.</div>
+            </div>
+          </div>
+
+          <!-- Gerçek Zamanlı Ses Değiştirici (Voice Changer) -->
+          <div class="form-group">
+            <div class="voice-changer-header">
+              <div>
+                <label class="form-label" style="margin:0; font-size:13px; font-weight:700;">🎭 Gerçek Zamanlı Ses Değiştirici (Voice Changer)</label>
+                <div style="font-size:11px; color:var(--text-muted);">Web Audio DSP algoritmalarıyla sesiniz modüle edilir ve odaya aktarılır.</div>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span id="lblActiveVoiceFx" class="voice-fx-status-badge">Normal</span>
+                <label class="toggle-switch" title="Ses Değiştiriciyi Aç veya Kapat">
+                  <input type="checkbox" id="chkVoiceChangerEnabled" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+            <div class="voice-fx-grid" id="voiceFxGrid">
+              <button type="button" class="voice-fx-card active" data-fx="none">
+                <div class="voice-fx-icon">👤</div>
+                <div class="voice-fx-name">Normal</div>
+                <div class="voice-fx-desc">Doğal Orijinal Ses</div>
+              </button>
+              <button type="button" class="voice-fx-card" data-fx="robot">
+                <div class="voice-fx-icon">🤖</div>
+                <div class="voice-fx-name">Robot</div>
+                <div class="voice-fx-desc">Metalik Siborg Filtresi</div>
+              </button>
+              <button type="button" class="voice-fx-card" data-fx="helium">
+                <div class="voice-fx-icon">🎈</div>
+                <div class="voice-fx-name">Helyum / Tiz</div>
+                <div class="voice-fx-desc">Çizgi Film / Tiz Ses</div>
+              </button>
+              <button type="button" class="voice-fx-card" data-fx="deep">
+                <div class="voice-fx-icon">👹</div>
+                <div class="voice-fx-name">Canavar</div>
+                <div class="voice-fx-desc">Derin Bas & Korkunç</div>
+              </button>
+              <button type="button" class="voice-fx-card" data-fx="walkie">
+                <div class="voice-fx-icon">📻</div>
+                <div class="voice-fx-name">Telsiz</div>
+                <div class="voice-fx-desc">Walkie-Talkie Bandı</div>
+              </button>
+              <button type="button" class="voice-fx-card" data-fx="telephone">
+                <div class="voice-fx-icon">☎️</div>
+                <div class="voice-fx-name">Eski Telefon</div>
+                <div class="voice-fx-desc">Retro Lo-Fi Ahize</div>
+              </button>
+            </div>
+          </div>
+
+          <!-- Konuşurken Müziği Kısma (Audio Ducking) -->
+          <div class="form-group" style="border-top:1px solid var(--border-color); padding-top:14px;">
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <label class="checkbox-group">
+                <input type="checkbox" id="chkAudioDucking" checked>
+                <span class="checkbox-label" style="font-weight:600;">🎵 Konuşurken Müziği Kıs (Audio Ducking)</span>
+              </label>
+              <span id="lblDuckingPctValue" style="font-size:12px; font-weight:700; color:var(--brand-light);">%70</span>
+            </div>
+            <div id="boxDuckingSlider" style="margin-top:6px;">
+              <input type="range" class="form-range" id="sliderDuckingPct" min="20" max="90" value="70" step="5">
+              <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">
+                Odada biri konuştuğunda müzik botunun sesini anlık olarak kısar, konuşma bitince geri açar.
+              </div>
+            </div>
+          </div>
+
+          <!-- Ses Düzeltmeler & Filtreler (DSP) -->
+          <div class="form-group" style="border-top:1px solid var(--border-color); padding-top:14px;">
+            <label class="form-label">🛡️ Ses Düzeltme & Gürültü Kalkanı Filtreleri</label>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <label class="checkbox-group">
+                <input type="checkbox" id="chkHighPass" checked>
+                <div>
+                  <span class="checkbox-label" style="font-weight:600;">🧹 Yüksek Geçiren Filtre (85Hz Düşük Frekans Kesici)</span>
+                  <div style="font-size:11px; color:var(--text-muted);">Masa vuruntularını, klima ve bilgisayar fanı uğultusunu keser.</div>
+                </div>
+              </label>
+
+              <label class="checkbox-group">
+                <input type="checkbox" id="chkVocalClarity" checked>
+                <div>
+                  <span class="checkbox-label" style="font-weight:600;">✨ Vokal Netleştirici (3 kHz Kristal Konuşma EQ)</span>
+                  <div style="font-size:11px; color:var(--text-muted);">İnsan sesi netliğini öne çıkarır, mikrofon tıslama sesini bastırır.</div>
+                </div>
+              </label>
+
+              <label class="checkbox-group">
+                <input type="checkbox" id="chkLimiter" checked>
+                <div>
+                  <span class="checkbox-label" style="font-weight:600;">🔊 Bağırma Koruması & Sıkıştırıcı (Ear-Rape Peak Limiter)</span>
+                  <div style="font-size:11px; color:var(--text-muted);">Ani bağırışlarda ses patlamasını engeller, kulak sağlığını korur.</div>
+                </div>
+              </label>
+
+              <label class="checkbox-group">
+                <input type="checkbox" id="chkEchoCancellation" checked>
+                <div>
+                  <span class="checkbox-label" style="font-weight:600;">🔇 Akustik Yankı Engelleme (Echo Cancellation)</span>
+                  <div style="font-size:11px; color:var(--text-muted);">Hoparlör kullananlarda sesin mikrofona sekmesini önler.</div>
+                </div>
+              </label>
+
+              <label class="checkbox-group">
+                <input type="checkbox" id="chkSoundEffects" checked>
+                <span class="checkbox-label">🔔 Bildirim ve Bağlantı Ses Efektleri</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. PROFİL & GÖRÜNÜM -->
+        <div class="settings-tab-panel hidden" id="tab-profile">
+          <h3 class="modal-title">👤 Profil & Görünüm Ayarları</h3>
+
+          <!-- Profil Resmi Seçici -->
+          <div class="form-group">
+            <label class="form-label">🖼️ Profil Resmi / Avatar</label>
+            <div style="display:flex; align-items:center; gap:16px; padding:12px; background:var(--bg-tertiary); border-radius:8px; border:1px solid var(--border-color);">
+              <div id="avatarSettingsPreview" style="width:60px; height:60px; border-radius:50%; background:var(--brand); display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:700; overflow:hidden; border:2px solid var(--border-color); flex-shrink:0;">
+                A
+              </div>
+              <div style="flex:1;">
+                <div style="font-size:12px; font-weight:600; color:var(--text-heading); margin-bottom:4px;">Cihazından Resim Yükle</div>
+                <div style="font-size:11px; color:var(--text-muted); margin-bottom:8px;">PNG, JPG, WebP veya GIF dosyası seçebilirsiniz (Maks 10MB)</div>
+                <div style="display:flex; gap:8px;">
+                  <input type="file" id="fileAvatarPicker" accept="image/png, image/jpeg, image/gif, image/webp" style="display:none;">
+                  <button type="button" class="btn-primary" id="btnPickAvatarFile" style="padding:4px 12px; font-size:12px;">📁 Resim Seç</button>
+                  <button type="button" class="btn-secondary" id="btnRemoveCustomAvatar" style="background:var(--bg-secondary); padding:4px 10px; font-size:12px;">✕ Kaldır</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">🖼️ Oyuncu Avatarı Seç (Tıklayarak Seçin)</label>
+            <div class="avatar-presets-grid" id="avatarPresetsGrid">
+              <div class="avatar-preset-item active" data-avatar="⚔️"><span class="avatar-icon">⚔️</span><span class="avatar-preset-name">Savaşçı</span></div>
+              <div class="avatar-preset-item" data-avatar="🧙‍♂️"><span class="avatar-icon">🧙‍♂️</span><span class="avatar-preset-name">Büyücü</span></div>
+              <div class="avatar-preset-item" data-avatar="🐉"><span class="avatar-icon">🐉</span><span class="avatar-preset-name">Ejderha</span></div>
+              <div class="avatar-preset-item" data-avatar="🤖"><span class="avatar-icon">🤖</span><span class="avatar-preset-name">Mecha</span></div>
+              <div class="avatar-preset-item" data-avatar="👾"><span class="avatar-icon">👾</span><span class="avatar-preset-name">Retro</span></div>
+              <div class="avatar-preset-item" data-avatar="🦊"><span class="avatar-icon">🦊</span><span class="avatar-preset-name">Tilki</span></div>
+              <div class="avatar-preset-item" data-avatar="🐱"><span class="avatar-icon">🐱</span><span class="avatar-preset-name">Neon Kedi</span></div>
+              <div class="avatar-preset-item" data-avatar="👑"><span class="avatar-icon">👑</span><span class="avatar-preset-name">Şampiyon</span></div>
+            </div>
+            <div style="margin-top:10px;">
+              <label class="form-label">veya Özel Avatar Görsel Linki (PNG/JPG/GIF)</label>
+              <input type="text" class="form-input" id="inputCustomAvatarUrl" placeholder="https://ornek.com/avatar.png">
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+            <div class="form-group">
+              <label class="form-label">Kullanıcı Adı</label>
+              <input type="text" class="form-input" id="inputSettingsUsername" maxlength="24">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Çevrim Durumu</label>
+              <select class="form-select" id="selectSettingsStatus">
+                <option value="online">🟢 Çevrimiçi</option>
+                <option value="idle">🟡 Boşta</option>
+                <option value="dnd">🔴 Rahatsız Etmeyin</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">🎮 Oyun Aktivitesi / Özel Durum</label>
+            <input type="text" class="form-input" id="inputSettingsGameActivity" placeholder="Örn: 🎮 Valorant Oynuyor veya 🏆 Turnuvada" maxlength="40">
+          </div>
+
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+            <div class="form-group">
+              <label class="form-label">🖤 Arayüz Teması</label>
+              <select class="form-select" id="selectAppTheme">
+                <option value="dark">🌙 Koyu Tema (Varsayılan)</option>
+                <option value="amoled">🖤 AMOLED Saf Siyah (True Midnight OLED)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">🎖️ Gamer Rozeti</label>
+              <select class="form-select" id="selectGamerBadge">
+                <option value="">(Rozet Yok)</option>
+                <option value="⚡ Tryhard">⚡ Tryhard</option>
+                <option value="🏆 Pro Gamer">🏆 Pro Gamer</option>
+                <option value="🎧 DJ & Beats">🎧 DJ & Beats</option>
+                <option value="🎮 Canlı Yayıncı">🎮 Canlı Yayıncı</option>
+                <option value="🍕 Chill Gamer">🍕 Chill Gamer</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Şifre Değiştirme -->
+          <div class="form-group" style="margin-top:8px; padding:12px; background:var(--bg-tertiary); border-radius:8px; border:1px solid var(--border-color);">
+            <div style="font-size:13px; font-weight:700; color:var(--text-heading); margin-bottom:8px;">🔑 Hesap Şifresini Değiştir</div>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <input type="password" class="form-input" id="inputSettingsOldPassword" placeholder="Mevcut Şifre" autocomplete="current-password">
+              <input type="password" class="form-input" id="inputSettingsNewPassword" placeholder="Yeni Şifre (En az 4 karakter)" autocomplete="new-password">
+              <button type="button" class="btn-primary" id="btnUpdatePassword" style="align-self:flex-start; padding:6px 14px; font-size:12px; margin-top:2px;">🔑 Şifreyi Güncelle</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. OYUN & ARAÇLAR -->
+        <div class="settings-tab-panel hidden" id="tab-gaming">
+          <h3 class="modal-title">🎮 Oyun İçi Araçlar & Performans</h3>
+          <div class="form-group">
+            <label class="checkbox-group">
+              <input type="checkbox" id="chkMiniPip">
+              <div>
+                <div class="checkbox-label" style="font-weight:700;">🖼️ Mini Yüzen Pencere (Oyun İçi Konuşmacı Overlay'i)</div>
+                <div style="font-size:11px; color:var(--text-muted);">Ekranın sağ altında kimin konuştuğunu gösteren şeffaf mini widget açar.</div>
+              </div>
+            </label>
+          </div>
+          <div class="form-group">
+            <label class="checkbox-group">
+              <input type="checkbox" id="chkLowCpuMode" checked>
+              <div>
+                <div class="checkbox-label" style="font-weight:700;">🚀 Ultra-Düşük RAM & CPU Tasarrufu</div>
+                <div style="font-size:11px; color:var(--text-muted);">Oyun oynarken sekme arka plandayken gereksiz render işlemlerini durdurarak 0 drop sağlar.</div>
+              </div>
+            </label>
+          </div>
+
+          <div style="border-top:1px solid var(--border-color); padding-top:14px;">
+            <h4 style="font-size:13px; font-weight:700; color:var(--text-heading); margin-bottom:8px;">🔔 Sistem & Web Push Bildirimleri</h4>
+            <p style="font-size:12px; color:var(--text-muted); line-height:1.5;">
+              Uygulama arka plandayken veya kilit ekranındayken DM mesajları ve @bahsetmeler için anında bildirim alın.
+            </p>
+            <div style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;">
+              <button class="btn-primary" id="btnReqDesktopNotif" style="padding:8px 14px; font-size:12px;">🔔 Bildirimleri Aç & Senkronize Et</button>
+              <button class="btn-secondary" id="btnInstallPwa" style="padding:8px 16px; font-size:12px; background:var(--bg-secondary); border:1px solid var(--border-color);">🚀 Uygulama Olarak Yükle (PWA)</button>
+            </div>
+          </div>
+
+          <div class="audio-control-card" style="margin-top:10px;">
+            <div style="font-size:13px; font-weight:700; color:var(--text-heading); margin-bottom:8px;">⚡ Genel Klavye Kısayolları</div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:12px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-secondary); padding:8px 12px; border-radius:var(--radius-sm);">
+                <span>Mikrofonu Sustur / Aç:</span>
+                <kbd style="background:var(--bg-tertiary); padding:2px 8px; border-radius:4px; font-weight:700; border:1px solid var(--border-color);">Ctrl + Shift + M</kbd>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-secondary); padding:8px 12px; border-radius:var(--radius-sm);">
+                <span>Sağırlaştır / Aç:</span>
+                <kbd style="background:var(--bg-tertiary); padding:2px 8px; border-radius:4px; font-weight:700; border:1px solid var(--border-color);">Ctrl + Shift + D</kbd>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-secondary); padding:8px 12px; border-radius:var(--radius-sm);">
+                <span>Hızlı Arama & Kanal:</span>
+                <kbd style="background:var(--bg-tertiary); padding:2px 8px; border-radius:4px; font-weight:700; border:1px solid var(--border-color);">Ctrl + K</kbd>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-secondary); padding:8px 12px; border-radius:var(--radius-sm);">
+                <span>Pencereleri Kapat:</span>
+                <kbd style="background:var(--bg-tertiary); padding:2px 8px; border-radius:4px; font-weight:700; border:1px solid var(--border-color);">Escape</kbd>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 8. Rol & İzin Matrisi -->
+        <div class="settings-tab-panel hidden" id="tab-permissions">
+          <div style="display:flex; align-items:center; justify-content:space-between;">
+            <h3 class="modal-title" style="margin:0;">🛡️ Rol & Kanal İzin Matrisi</h3>
+            <button class="btn-primary" id="btnSaveRolePermissions" style="padding:6px 14px; font-size:12px;">💾 İzinleri Kaydet</button>
+          </div>
+          <p style="font-size:12px; color:var(--text-muted); margin-top:6px;">
+            Sunucudaki rollerin (admin, mod, vip, member) hangi yetkilere sahip olduğunu buradan belirleyebilirsiniz.
+          </p>
+          <div class="perm-table-wrap" style="overflow-x:auto; margin-top:12px;">
+            <table class="perm-table" id="permMatrixTable">
+              <thead>
+                <tr>
+                  <th>Yetki / İzin</th>
+                  <th style="text-align:center;">👤 Üye</th>
+                  <th style="text-align:center;">💎 VIP</th>
+                  <th style="text-align:center;">🛡️ Mod</th>
+                  <th style="text-align:center;">👑 Admin</th>
+                </tr>
+              </thead>
+              <tbody id="permMatrixBody">
+                <!-- Dynamically rendered -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 9. Sunucu Yapılandırması & Yedekleme -->
+        <div class="settings-tab-panel hidden" id="tab-backup">
+          <h3 class="modal-title">🏛️ Sunucu Yapılandırması & Yedekleme</h3>
+          <p style="font-size:12px; color:var(--text-muted); line-height:1.5; margin-top:6px;">
+            Sunucunuzun adını, ikonunu, açıklamasını düzenleyin veya tüm sunucu yapılandırmasını yedekleyip geri yükleyin.
+          </p>
+
+          <!-- Sunucu Genel Ayarları (Sadece Admin) -->
+          <div style="background:var(--bg-tertiary); border:1px solid var(--border-color); border-radius:8px; padding:16px; margin-top:16px;">
+            <div style="font-size:15px; font-weight:700; color:var(--text-heading); margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+              <span>👑</span>
+              <span>Sunucu Kimliği & Bilgileri</span>
+            </div>
+
+            <div style="display:grid; grid-template-columns:90px 1fr; gap:12px; margin-bottom:12px;">
+              <div>
+                <label class="form-label">İkon (Emoji)</label>
+                <input type="text" class="form-input" id="inputSettingsServerIcon" maxlength="6" style="text-align:center; font-size:20px;" placeholder="🎮">
+              </div>
+              <div>
+                <label class="form-label">Sunucu Adı</label>
+                <input type="text" class="form-input" id="inputSettingsServerName" maxlength="40" placeholder="Örn: Efsane Oyuncular Topluluğu">
+              </div>
+            </div>
+
+            <div style="margin-bottom:12px;">
+              <label class="form-label">Sunucu Açıklaması / Sloganı</label>
+              <input type="text" class="form-input" id="inputSettingsServerDesc" maxlength="150" placeholder="Örn: CS2, Valorant ve sohbet odamız">
+            </div>
+
+            <button type="button" class="btn-primary" id="btnSaveServerIdentity" style="padding:8px 18px; font-size:13px;">
+              💾 Sunucu Bilgilerini Kaydet
+            </button>
+          </div>
+          
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:16px;">
+            <div class="audio-control-card" style="display:flex; flex-direction:column; justify-content:space-between;">
+              <div>
+                <div style="font-size:15px; font-weight:700; color:var(--text-heading); margin-bottom:6px;">📤 Sunucuyu Yedekle (Export)</div>
+                <div style="font-size:12px; color:var(--text-muted); line-height:1.4;">
+                  Tüm ayarları, odaları ve izin matrisini JSON formatında bilgisayarınıza indirir.
+                </div>
+              </div>
+              <button class="btn-primary" id="btnExportServerBackup" style="margin-top:14px; padding:10px 16px;">
+                📥 Yedeği İndir (.json)
+              </button>
+            </div>
+
+            <div class="audio-control-card" style="display:flex; flex-direction:column; justify-content:space-between;">
+              <div>
+                <div style="font-size:15px; font-weight:700; color:var(--text-heading); margin-bottom:6px;">📥 Yedekten Geri Yükle (Import)</div>
+                <div style="font-size:12px; color:var(--text-muted); line-height:1.4;">
+                  Daha önce indirdiğiniz JSON yedek dosyasını yükleyerek sunucu yapılandırmasını anında geri getirir.
+                </div>
+              </div>
+              <div style="margin-top:14px;">
+                <input type="file" id="fileServerBackup" accept=".json" style="display:none;">
+                <button class="btn-secondary" id="btnTriggerRestoreBackup" style="width:100%; padding:10px 16px; background:var(--bg-secondary); border:1px solid var(--border-color);">
+                  📂 Yedek Dosyası Seç (.json)
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 8. DENETİM KAYDI (AUDIT LOG) -->
+        <div class="settings-tab-panel hidden" id="tab-audit">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
+            <div>
+              <h3 class="modal-title" style="margin:0;">📜 Sunucu Denetim Kaydı (Audit Log)</h3>
+              <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">Sunucu üzerindeki tüm yönetimsel eylemleri, yetki değişikliklerini ve moderasyon kayıtlarını izleyin.</div>
+            </div>
+            <button type="button" class="btn-secondary" id="btnRefreshAuditLogs" style="padding:6px 12px; font-size:12px; background:var(--bg-secondary); border:1px solid var(--border-color); display:flex; align-items:center; gap:6px;">
+              <span>🔄</span> Yenile
+            </button>
+          </div>
+
+          <div class="audit-table-wrap" style="max-height:480px; overflow-y:auto; border:1px solid var(--border-color); border-radius:8px; background:var(--bg-tertiary);">
+            <table class="audit-table" style="width:100%;">
+              <thead>
+                <tr style="background:var(--bg-secondary); border-bottom:1px solid var(--border-color); position:sticky; top:0; z-index:2;">
+                  <th style="width:130px;">Zaman</th>
+                  <th style="width:110px;">Yetkili</th>
+                  <th style="width:130px;">Eylem</th>
+                  <th style="width:120px;">Hedef</th>
+                  <th>Detaylar</th>
+                </tr>
+              </thead>
+              <tbody id="auditTableBody">
+                <tr>
+                  <td colspan="5" style="text-align:center; color:var(--text-muted); padding:24px;">Yükleniyor...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 9. OYUN WEBHOOKLARI -->
+        <div class="settings-tab-panel hidden" id="tab-webhooks">
+          <h3 class="modal-title">📡 Oyun Sunucusu Webhook Entegrasyonu</h3>
+          <p style="font-size:12px; color:var(--text-muted); line-height:1.5; margin-top:6px;">
+            CS2, Minecraft, Rust veya botlarınızdan TalkApp metin odalarına otomatik bildirim gönderin.
+          </p>
+
+          <div style="background:var(--bg-tertiary); border:1px solid var(--border-color); border-radius:8px; padding:16px; margin-top:16px;">
+            <div class="form-group">
+              <label class="form-label">Mesajın İletileceği Metin Kanalı</label>
+              <select class="form-select" id="selectWebhookChannel"></select>
+            </div>
+
+            <div class="form-group" style="margin-top:14px;">
+              <label class="form-label">🔗 Webhook URL Adresi</label>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <code id="lblWebhookUrl" style="flex:1; padding:10px 12px; background:var(--bg-secondary); border-radius:6px; font-family:monospace; font-size:12px; color:var(--brand-light); word-break:break-all; border:1px solid var(--border-color);">...</code>
+                <button type="button" class="btn-secondary" id="btnCopyWebhookUrl" style="padding:10px 14px; font-size:12px; background:var(--bg-secondary); border:1px solid var(--border-color); white-space:nowrap;">📋 Kopyala</button>
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-top:14px;">
+              <label class="form-label">⚡ Örnek cURL / API İsteği</label>
+              <pre id="codeWebhookSnippet" style="padding:12px; background:var(--bg-primary); border-radius:6px; font-family:monospace; font-size:11px; color:var(--text-normal); overflow-x:auto; border:1px solid var(--border-color);"></pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer" style="padding:14px 24px; display:flex; justify-content:space-between; align-items:center;">
+          <button type="button" class="btn-secondary" id="btnCancelSettings" style="background:var(--bg-secondary);">Kaydetmeden Çık</button>
+          <button class="btn-primary" id="btnSaveSettings">Ayarları Uygula & Kapat</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: KULLANICI PROFİLİ & MODERASYON -->
+  <div class="modal-backdrop" id="modalUserAction">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title" id="lblUserActionTitle">👤 Kullanıcı Detayları</h3>
+        <button class="modal-close-btn" id="btnCloseUserActionModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="display:flex; align-items:center; gap:16px;">
+          <div class="avatar" id="userActionAvatar" style="width:56px; height:56px; font-size:24px;">O</div>
+          <div>
+            <div style="font-size:18px; font-weight:700; color:var(--text-heading);" id="userActionName">Oyuncu</div>
+            <div style="font-size:12px; color:var(--text-muted);" id="userActionId">#0000</div>
+            <div style="font-size:11px; color:var(--green); font-weight:600; margin-top:2px;" id="userActionGame"></div>
+          </div>
+        </div>
+
+        <div style="display:flex; gap:12px; margin-top:8px;">
+          <button class="btn-primary" id="btnStartDmFromModal" style="flex:1;">
+            💬 Özel Mesaj Gönder (DM)
+          </button>
+        </div>
+
+        <!-- Assigned Role Badges -->
+        <div style="margin-top:10px;" id="userActionRolesWrapper">
+          <label class="form-label" style="font-size:11px; text-transform:uppercase; color:var(--text-muted); letter-spacing:0.5px;">Roller</label>
+          <div id="userActionRoleBadges" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
+        </div>
+
+        <!-- Moderation Actions -->
+        <div class="form-group hidden" id="modActionGroup" style="border-top:1px solid var(--border-color); padding-top:14px; margin-top:10px;">
+          <label class="form-label">🛡️ Moderasyon İşlemleri</label>
+          <div style="display:flex; gap:8px;">
+            <button class="btn-secondary" id="btnKickVoiceMember" style="flex:1; background:rgba(242,63,67,0.15); color:var(--red);">
+              🚪 Sesten At
+            </button>
+            <button class="btn-secondary" id="btnServerMuteMember" style="flex:1; background:var(--bg-secondary);">
+              🔇 Sunucuda Sustur
+            </button>
+          </div>
+          <div style="display:flex; gap:8px; margin-top:8px;" id="modMoveVoiceRow">
+            <select class="form-select" id="selectMoveVoiceChannel" style="flex:1; font-size:12px;">
+              <option value="">🔀 Başka Ses Odasına Taşı...</option>
+            </select>
+            <button class="btn-secondary" id="btnMoveVoiceMember" style="background:rgba(88,101,242,0.2); color:var(--brand-light); white-space:nowrap;">
+              Taşı ➔
+            </button>
+          </div>
+        </div>
+
+        <!-- Role Assignment -->
+        <div class="form-group hidden" id="adminRoleAssignGroup" style="border-top:1px solid var(--border-color); padding-top:14px; margin-top:10px;">
+          <label class="form-label">👑 Sunucu Rollerini Yönet</label>
+          <div id="memberRolesCheckList" style="display:flex; flex-direction:column; gap:6px; max-height:160px; overflow-y:auto; padding:8px; background:var(--bg-secondary); border-radius:6px; border:1px solid var(--border-color);">
+            <!-- Dynamically populated checkboxes -->
+          </div>
+          <button type="button" class="btn-primary" id="btnConfirmAssignRole" style="margin-top:8px; width:100%; padding:8px; font-size:12px;">💾 Rolleri Kaydet</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ODA ŞİFRESİ GİR -->
+  <div class="modal-backdrop" id="modalChannelPassword">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title">🔒 Şifreli Kanal</h3>
+        <button class="modal-close-btn" id="btnCloseChannelPasswordModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:13px; color:var(--text-muted);" id="lblChannelPasswordPrompt">Bu odaya girmek için lütfen şifreyi girin.</p>
+        <div class="form-group">
+          <label class="form-label">Oda Şifresi</label>
+          <input type="password" class="form-input" id="inputEnteredPassword" placeholder="Şifreyi giriniz...">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="btnCancelEnteredPassword">İptal</button>
+        <button class="btn-primary" id="btnSubmitEnteredPassword">Giriş Yap</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: SUNUCU OLUŞTUR VEYA KATIL (DISCORD GUILD ARCHITECTURE) -->
+  <div class="modal-backdrop" id="modalServerConnect">
+    <div class="modal-box" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="lblServerModalTitle">🏰 Sunucu Oluştur veya Katıl</h3>
+        <button class="modal-close-btn" id="btnCloseServerModal">✕</button>
+      </div>
+
+      <!-- Modal Tabs: 1. Sunucu Oluştur | 2. Davet Koduyla Katıl | 3. Farklı Domain -->
+      <div class="server-modal-tabs" style="display:flex; border-bottom:1px solid var(--border-color); background:var(--bg-secondary);">
+        <button type="button" class="server-modal-tab-btn active" id="tabModalCreateServer" style="flex:1; padding:12px; background:none; border:none; color:var(--text-heading); font-weight:700; cursor:pointer; border-bottom:2px solid var(--brand);">
+          🚀 Sunucu Oluştur
+        </button>
+        <button type="button" class="server-modal-tab-btn" id="tabModalJoinServer" style="flex:1; padding:12px; background:none; border:none; color:var(--text-muted); font-weight:600; cursor:pointer;">
+          🔗 Davet Koduyla Katıl
+        </button>
+        <button type="button" class="server-modal-tab-btn" id="tabModalDomainGateway" style="padding:12px 14px; background:none; border:none; color:var(--text-muted); font-size:12px; cursor:pointer;" title="Farklı Domain / IP Girişi">
+          🌐 Harici Domain
+        </button>
+      </div>
+
+      <div class="modal-body" style="padding:20px;">
+        <!-- TAB 1: SUNUCU OLUŞTUR -->
+        <div class="server-tab-content" id="panelCreateServer">
+          <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px; line-height:1.5;">
+            Arkadaşlarınız veya ekibiniz için yeni ve izole bir topluluk alanı oluşturun. Metin ve ses odaları bu sunucuya özel olacaktır.
+          </p>
+
+          <div class="form-group">
+            <label class="form-label">Sunucu Adı <span style="color:var(--red);">*</span></label>
+            <input type="text" class="form-input" id="inputNewServerName" placeholder="Örn: CS2 Takımı, Proje Grubu..." maxlength="32">
+          </div>
+
+          <div class="form-group" style="margin-top:12px;">
+            <label class="form-label">Sunucu İkonu / Emoji Seç</label>
+            <div class="server-icon-picker" id="serverIconPicker" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
+              <button type="button" class="server-icon-choice selected" data-icon="🎮">🎮</button>
+              <button type="button" class="server-icon-choice" data-icon="⚔️">⚔️</button>
+              <button type="button" class="server-icon-choice" data-icon="🕹️">🕹️</button>
+              <button type="button" class="server-icon-choice" data-icon="🎧">🎧</button>
+              <button type="button" class="server-icon-choice" data-icon="🚀">🚀</button>
+              <button type="button" class="server-icon-choice" data-icon="💻">💻</button>
+              <button type="button" class="server-icon-choice" data-icon="👑">👑</button>
+              <button type="button" class="server-icon-choice" data-icon="🛡️">🛡️</button>
+              <button type="button" class="server-icon-choice" data-icon="🍿">🍿</button>
+              <button type="button" class="server-icon-choice" data-icon="🏆">🏆</button>
+              <button type="button" class="server-icon-choice" data-icon="🔥">🔥</button>
+              <button type="button" class="server-icon-choice" data-icon="💎">💎</button>
+            </div>
+            <input type="hidden" id="inputSelectedServerIcon" value="🎮">
+          </div>
+
+          <div class="form-group" style="margin-top:12px;">
+            <label class="form-label">Sunucu Açıklaması (İsteğe Bağlı)</label>
+            <input type="text" class="form-input" id="inputNewServerDesc" placeholder="Kısa bir açıklama..." maxlength="120">
+          </div>
+
+          <div style="margin-top:18px; display:flex; justify-content:flex-end; gap:10px;">
+            <button type="button" class="btn-secondary" id="btnCancelCreateServer">Vazgeç</button>
+            <button type="button" class="btn-primary" id="btnSubmitCreateServer" style="padding:10px 24px;">🚀 Sunucuyu Oluştur</button>
+          </div>
+        </div>
+
+        <!-- TAB 2: DAVET KODUYLA KATIL -->
+        <div class="server-tab-content hidden" id="panelJoinServer">
+          <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px; line-height:1.5;">
+            Bir arkadaşınızın paylaştığı davet kodunu girerek o topluluğa anında katılabilirsiniz.
+          </p>
+
+          <div class="form-group">
+            <label class="form-label">Davet Kodu <span style="color:var(--red);">*</span></label>
+            <input type="text" class="form-input" id="inputJoinInviteCode" placeholder="Örn: TALK-1234 veya CS2-8842..." style="font-family:monospace; font-size:16px; letter-spacing:1px; text-transform:uppercase;">
+            <span style="font-size:11px; color:var(--text-muted); display:block; margin-top:4px;">Davet bağlantısını doğrudan buraya yapıştırabilirsiniz.</span>
+          </div>
+
+          <div style="margin-top:18px; display:flex; justify-content:flex-end; gap:10px;">
+            <button type="button" class="btn-secondary" id="btnCancelJoinServer">Vazgeç</button>
+            <button type="button" class="btn-primary" id="btnSubmitJoinServer" style="padding:10px 24px;">🚀 Sunucuya Katıl</button>
+          </div>
+        </div>
+
+        <!-- TAB 3: HARİCİ DOMAIN / IP -->
+        <div class="server-tab-content hidden" id="panelDomainGateway">
+          <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px; line-height:1.5;">
+            Bağlanmak istediğiniz farklı bir TalkApp sunucu domain veya IP adresini girin (örn: <strong style="color:var(--text-heading);">localhost:3000</strong> veya <strong style="color:var(--text-heading);">talkapp.example.com</strong>).
+          </p>
+
+          <div class="form-group">
+            <label class="form-label">Sunucu Domain / IP Adresi</label>
+            <input type="text" class="form-input" id="inputServerHost" placeholder="Örn: talkapp.example.com veya localhost:3000">
+          </div>
+
+          <div class="form-group" style="margin-top:12px;">
+            <label class="form-label" style="font-size:11px; text-transform:uppercase; color:var(--text-muted); letter-spacing:0.5px;">Hızlı Hazır Sunucular</label>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button type="button" class="preset-pill server-preset-btn" data-host="localhost:3000">💻 Yerel (localhost:3000)</button>
+              <button type="button" class="preset-pill server-preset-btn" data-host="127.0.0.1:3000">🌐 Yerel IP (127.0.0.1:3000)</button>
+            </div>
+          </div>
+
+          <div class="form-group" id="recentServersGroup" style="margin-top:16px;">
+            <label class="form-label" style="font-size:11px; text-transform:uppercase; color:var(--text-muted); letter-spacing:0.5px;">Son Bağlanılan Domainler</label>
+            <div id="recentServersList" style="display:flex; flex-direction:column; gap:6px; max-height:120px; overflow-y:auto;"></div>
+          </div>
+
+          <div style="margin-top:18px; display:flex; justify-content:flex-end; gap:10px;">
+            <button type="button" class="btn-secondary" id="btnCancelDomainConnect">İptal</button>
+            <button type="button" class="btn-primary" id="btnConfirmServerConnect">Bağlan ➔</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: SUNUCU AYARLARI (GUILD SETTINGS) -->
+  <div class="modal-backdrop" id="modalGuildSettings">
+    <div class="modal-box" style="max-width: 750px; width: 95vw; display:flex; flex-direction:column; max-height: 85vh;">
+      <div class="modal-header" style="flex-shrink:0;">
+        <h3 class="modal-title">⚙️ Sunucu Ayarları</h3>
+        <button class="modal-close-btn" id="btnCloseGuildSettingsModal">✕</button>
+      </div>
+
+      <!-- Guild Settings Navigation Tabs -->
+      <div class="guild-modal-tabs" style="display:flex; border-bottom:1px solid var(--border-color); background:var(--bg-secondary); flex-shrink:0;">
+        <button type="button" class="guild-tab-btn active" id="btnGuildTabOverview" style="flex:1; padding:12px; background:none; border:none; color:var(--text-heading); font-weight:700; cursor:pointer; border-bottom:2px solid var(--brand);">
+          ⚙️ Genel Bakış
+        </button>
+        <button type="button" class="guild-tab-btn" id="btnGuildTabRoles" style="flex:1; padding:12px; background:none; border:none; color:var(--text-muted); font-weight:600; cursor:pointer;">
+          🛡️ Roller & İzinler
+        </button>
+        <button type="button" class="guild-tab-btn" id="btnGuildTabAudit" style="flex:1; padding:12px; background:none; border:none; color:var(--text-muted); font-weight:600; cursor:pointer;">
+          📜 Denetim Kaydı
+        </button>
+      </div>
+
+      <div class="modal-body" style="padding:0; overflow-y:auto; flex:1;">
+        <!-- TAB 1: GENEL BAKIŞ -->
+        <div class="guild-tab-panel" id="panelGuildOverview" style="padding:20px;">
+          <div class="form-group">
+            <label class="form-label">Sunucu Adı</label>
+            <input type="text" class="form-input" id="inputEditGuildName" placeholder="Sunucu adı..." maxlength="32">
+          </div>
+          <div class="form-group" style="margin-top:12px;">
+            <label class="form-label">Sunucu İkonu (Emoji veya Harf)</label>
+            <input type="text" class="form-input" id="inputEditGuildIcon" placeholder="🎮" maxlength="4" style="width:70px; text-align:center; font-size:20px;">
+          </div>
+          <div class="form-group" style="margin-top:12px;">
+            <label class="form-label">Sunucu Açıklaması</label>
+            <input type="text" class="form-input" id="inputEditGuildDesc" placeholder="Sunucu açıklaması..." maxlength="120">
+          </div>
+          <div class="form-group" style="margin-top:16px; padding:12px; background:var(--bg-secondary); border-radius:8px;">
+            <label class="form-label" style="margin-bottom:4px;">🔗 Sunucu Davet Kodu</label>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span id="lblGuildSettingsInviteCode" style="font-family:monospace; font-size:16px; font-weight:700; color:var(--brand-light); letter-spacing:1px;">----</span>
+              <button type="button" class="card-btn" id="btnCopyGuildInviteCode" style="margin-left:auto; padding:6px 12px; font-size:12px;">📋 Kopyala</button>
+            </div>
+          </div>
+          <div class="form-group hidden" id="dangerZoneGuildDelete" style="border-top:1px solid rgba(242,63,67,0.3); padding-top:14px; margin-top:16px;">
+            <div style="font-size:13px; font-weight:700; color:var(--red); margin-bottom:4px;">Tehlikeli Bölge</div>
+            <div style="font-size:11px; color:var(--text-muted); margin-bottom:10px;">Sunucuyu sildiğinizde içindeki tüm kanallar ve mesajlar kalıcı olarak silinir.</div>
+            <button type="button" class="btn-secondary" id="btnDeleteCurrentGuild" style="background:rgba(242,63,67,0.15); color:var(--red); border:1px solid rgba(242,63,67,0.3); width:100%;">
+              🗑️ Bu Sunucuyu Kalıcı Olarak Sil
+            </button>
+          </div>
+          <div style="margin-top:20px; display:flex; justify-content:flex-end; gap:10px;">
+            <button type="button" class="btn-primary" id="btnSaveGuildSettings">Değişiklikleri Kaydet</button>
+          </div>
+        </div>
+
+        <!-- TAB 2: ROLLER & İZİNLER -->
+        <div class="guild-tab-panel hidden" id="panelGuildRoles" style="display:flex; height:100%; min-height:480px;">
+          <!-- Left: Role List Column -->
+          <div class="roles-sidebar" style="width:220px; border-right:1px solid var(--border-color); background:var(--bg-secondary); padding:12px; display:flex; flex-direction:column; gap:8px; flex-shrink:0;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+              <span style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">Roller</span>
+              <button type="button" class="btn-primary" id="btnCreateNewRole" style="padding:4px 8px; font-size:11px;" title="Yeni Rol Oluştur">➕ Yeni Rol</button>
+            </div>
+            <div class="roles-list" id="guildRolesList" style="display:flex; flex-direction:column; gap:4px; overflow-y:auto; flex:1;">
+              <!-- Dynamically populated role items -->
+            </div>
+          </div>
+
+          <!-- Right: Selected Role Editor Column -->
+          <div class="role-editor-pane" id="roleEditorPane" style="flex:1; padding:20px; overflow-y:auto; display:flex; flex-direction:column; gap:16px;">
+            <div id="roleEditorEmpty" class="hidden" style="text-align:center; padding:40px; color:var(--text-muted);">
+              Soldaki listeden düzenlemek için bir rol seçin veya yeni bir rol oluşturun.
+            </div>
+            <div id="roleEditorContent">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+                <div>
+                  <h4 style="margin:0; font-size:16px; color:var(--text-heading);" id="lblEditRoleHeading">Rolü Düzenle</h4>
+                  <div style="font-size:11px; color:var(--text-muted); margin-top:2px;" id="lblEditRoleSubtitle">Sunucu içi yetkileri ve rengi yapılandırın</div>
+                </div>
+                <button type="button" class="btn-secondary" id="btnDeleteRole" style="background:rgba(242,63,67,0.15); color:var(--red); border:1px solid rgba(242,63,67,0.3); font-size:12px; padding:6px 12px;">
+                  🗑️ Rolü Sil
+                </button>
+              </div>
+
+              <!-- Role Name -->
+              <div class="form-group">
+                <label class="form-label">Rol Adı</label>
+                <input type="text" class="form-input" id="inputEditRoleName" placeholder="Örn: Moderatör, VIP..." maxlength="32">
+              </div>
+
+              <!-- Role Color Selection -->
+              <div class="form-group" style="margin-top:12px;">
+                <label class="form-label">Rol Rengi</label>
+                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
+                  <button type="button" class="role-color-swatch" data-color="#e74c3c" style="background:#e74c3c; width:26px; height:26px; border-radius:50%; border:2px solid transparent; cursor:pointer;" title="Kırmızı"></button>
+                  <button type="button" class="role-color-swatch" data-color="#e67e22" style="background:#e67e22; width:26px; height:26px; border-radius:50%; border:2px solid transparent; cursor:pointer;" title="Turuncu"></button>
+                  <button type="button" class="role-color-swatch" data-color="#f1c40f" style="background:#f1c40f; width:26px; height:26px; border-radius:50%; border:2px solid transparent; cursor:pointer;" title="Sarı"></button>
+                  <button type="button" class="role-color-swatch" data-color="#2ecc71" style="background:#2ecc71; width:26px; height:26px; border-radius:50%; border:2px solid transparent; cursor:pointer;" title="Yeşil"></button>
+                  <button type="button" class="role-color-swatch" data-color="#1abc9c" style="background:#1abc9c; width:26px; height:26px; border-radius:50%; border:2px solid transparent; cursor:pointer;" title="Turkuaz"></button>
+                  <button type="button" class="role-color-swatch" data-color="#3498db" style="background:#3498db; width:26px; height:26px; border-radius:50%; border:2px solid transparent; cursor:pointer;" title="Mavi"></button>
+                  <button type="button" class="role-color-swatch" data-color="#9b59b6" style="background:#9b59b6; width:26px; height:26px; border-radius:50%; border:2px solid transparent; cursor:pointer;" title="Mor"></button>
+                  <button type="button" class="role-color-swatch" data-color="#e91e63" style="background:#e91e63; width:26px; height:26px; border-radius:50%; border:2px solid transparent; cursor:pointer;" title="Pembe"></button>
+                  <button type="button" class="role-color-swatch" data-color="#99aab5" style="background:#99aab5; width:26px; height:26px; border-radius:50%; border:2px solid transparent; cursor:pointer;" title="Gri"></button>
+                  <input type="color" id="inputEditRoleColorCustom" value="#99aab5" style="width:32px; height:32px; padding:0; border:none; border-radius:6px; cursor:pointer; background:none;" title="Özel Renk Seç">
+                  <span id="lblEditRoleColorHex" style="font-family:monospace; font-size:12px; font-weight:700; color:var(--text-muted); margin-left:4px;">#99aab5</span>
+                </div>
+              </div>
+
+              <!-- Hoist Switch (Display role members separately) -->
+              <div class="form-group" style="margin-top:12px; padding:12px; background:var(--bg-secondary); border-radius:8px; display:flex; align-items:center; justify-content:space-between;">
+                <div>
+                  <div style="font-size:13px; font-weight:600; color:var(--text-heading);">Rol Üyelerini Ayrı Göster</div>
+                  <div style="font-size:11px; color:var(--text-muted);">Bu role sahip olanları üye listesinde diğer çevrimiçi kişilerden ayrı başlık altında gruplar.</div>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="chkEditRoleHoist">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+
+              <!-- Granular Permissions Matrix Checklist -->
+              <div style="margin-top:14px;">
+                <div style="font-size:13px; font-weight:700; color:var(--text-heading); margin-bottom:10px;">🛡️ Rol İzinleri</div>
+
+                <!-- CATEGORY: Genel Sunucu İzinleri -->
+                <div class="role-perm-section" style="margin-bottom:12px; background:var(--bg-secondary); border-radius:8px; padding:10px 14px;">
+                  <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:8px;">GENEL SUNUCU İZİNLERİ</div>
+                  
+                  <div class="role-perm-row" style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05);">
+                    <div>
+                      <div style="font-size:13px; font-weight:600; color:var(--text-heading);">Sunucuyu Yönet (Yönetici)</div>
+                      <div style="font-size:11px; color:var(--text-muted);">Sunucu adını, ikonunu ve ayarlarını değiştirebilir. Tam yetki sağlar.</div>
+                    </div>
+                    <label class="toggle-switch"><input type="checkbox" class="chk-role-perm" data-perm="manage_server"><span class="toggle-slider"></span></label>
+                  </div>
+
+                  <div class="role-perm-row" style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05);">
+                    <div>
+                      <div style="font-size:13px; font-weight:600; color:var(--text-heading);">Kanalları Yönet</div>
+                      <div style="font-size:11px; color:var(--text-muted);">Yeni metin ve ses kanalları oluşturabilir, silebilir ve kategoriler arasında taşıyabilir.</div>
+                    </div>
+                    <label class="toggle-switch"><input type="checkbox" class="chk-role-perm" data-perm="manage_channels"><span class="toggle-slider"></span></label>
+                  </div>
+
+                  <div class="role-perm-row" style="display:flex; justify-content:space-between; align-items:center; padding:8px 0;">
+                    <div>
+                      <div style="font-size:13px; font-weight:600; color:var(--text-heading);">Rolleri Yönet</div>
+                      <div style="font-size:11px; color:var(--text-muted);">Yeni roller oluşturabilir, rol izinlerini düzenleyebilir ve üyelere rol atayabilir.</div>
+                    </div>
+                    <label class="toggle-switch"><input type="checkbox" class="chk-role-perm" data-perm="manage_roles"><span class="toggle-slider"></span></label>
+                  </div>
+                </div>
+
+                <!-- CATEGORY: Üye Moderasyonu -->
+                <div class="role-perm-section" style="margin-bottom:12px; background:var(--bg-secondary); border-radius:8px; padding:10px 14px;">
+                  <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:8px;">ÜYE YÖNETİMİ & MODERASYON</div>
+
+                  <div class="role-perm-row" style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05);">
+                    <div>
+                      <div style="font-size:13px; font-weight:600; color:var(--text-heading);">Üyeleri Sesten At</div>
+                      <div style="font-size:11px; color:var(--text-muted);">Ses kanalındaki rahatsızlık veren üyeleri odadan çıkarabilir.</div>
+                    </div>
+                    <label class="toggle-switch"><input type="checkbox" class="chk-role-perm" data-perm="kick_members"><span class="toggle-slider"></span></label>
+                  </div>
+
+                  <div class="role-perm-row" style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05);">
+                    <div>
+                      <div style="font-size:13px; font-weight:600; color:var(--text-heading);">Üyeleri Sustur</div>
+                      <div style="font-size:11px; color:var(--text-muted);">Sunucu genelinde diğer kullanıcıların mikrofonunu susturabilir.</div>
+                    </div>
+                    <label class="toggle-switch"><input type="checkbox" class="chk-role-perm" data-perm="mute_members"><span class="toggle-slider"></span></label>
+                  </div>
+
+                  <div class="role-perm-row" style="display:flex; justify-content:space-between; align-items:center; padding:8px 0;">
+                    <div>
+                      <div style="font-size:13px; font-weight:600; color:var(--text-heading);">Üyeleri Taşı</div>
+                      <div style="font-size:11px; color:var(--text-muted);">Kullanıcıları ses kanalları arasında sürükleyip taşıyabilir.</div>
+                    </div>
+                    <label class="toggle-switch"><input type="checkbox" class="chk-role-perm" data-perm="move_members"><span class="toggle-slider"></span></label>
+                  </div>
+                </div>
+
+                <!-- CATEGORY: Metin Kanalı İzinleri -->
+                <div class="role-perm-section" style="margin-bottom:12px; background:var(--bg-secondary); border-radius:8px; padding:10px 14px;">
+                  <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:8px;">METİN KANALI İZİNLERİ</div>
+
+                  <div class="role-perm-row" style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05);">
+                    <div>
+                      <div style="font-size:13px; font-weight:600; color:var(--text-heading);">Mesaj Gönder</div>
+                      <div style="font-size:11px; color:var(--text-muted);">Metin sohbet odalarında mesaj gönderebilir.</div>
+                    </div>
+                    <label class="toggle-switch"><input type="checkbox" class="chk-role-perm" data-perm="send_messages"><span class="toggle-slider"></span></label>
+                  </div>
+
+                  <div class="role-perm-row" style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05);">
+                    <div>
+                      <div style="font-size:13px; font-weight:600; color:var(--text-heading);">Dosya & Medya Ekle</div>
+                      <div style="font-size:11px; color:var(--text-muted);">Resim, ses kaydı ve dosya ekleri paylaşabilir.</div>
+                    </div>
+                    <label class="toggle-switch"><input type="checkbox" class="chk-role-perm" data-perm="upload_files"><span class="toggle-slider"></span></label>
+                  </div>
+
+                  <div class="role-perm-row" style="display:flex; justify-content:space-between; align-items:center; padding:8px 0;">
+                    <div>
+                      <div style="font-size:13px; font-weight:600; color:var(--text-heading);">@everyone ve @here Bahset</div>
+                      <div style="font-size:11px; color:var(--text-muted);">Sunucudaki tüm üyelere etiketli bildirim gönderebilir.</div>
+                    </div>
+                    <label class="toggle-switch"><input type="checkbox" class="chk-role-perm" data-perm="mention_everyone"><span class="toggle-slider"></span></label>
+                  </div>
+                </div>
+
+                <!-- CATEGORY: Ses Kanalı İzinleri -->
+                <div class="role-perm-section" style="margin-bottom:12px; background:var(--bg-secondary); border-radius:8px; padding:10px 14px;">
+                  <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:8px;">SES KANALI İZİNLERİ</div>
+
+                  <div class="role-perm-row" style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05);">
+                    <div>
+                      <div style="font-size:13px; font-weight:600; color:var(--text-heading);">Sese Bağlan</div>
+                      <div style="font-size:11px; color:var(--text-muted);">Sesli sohbet odalarına katılabilir.</div>
+                    </div>
+                    <label class="toggle-switch"><input type="checkbox" class="chk-role-perm" data-perm="connect_voice"><span class="toggle-slider"></span></label>
+                  </div>
+
+                  <div class="role-perm-row" style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05);">
+                    <div>
+                      <div style="font-size:13px; font-weight:600; color:var(--text-heading);">Konuş</div>
+                      <div style="font-size:11px; color:var(--text-muted);">Ses kanallarında mikrofonunu kullanarak konuşabilir.</div>
+                    </div>
+                    <label class="toggle-switch"><input type="checkbox" class="chk-role-perm" data-perm="speak_voice"><span class="toggle-slider"></span></label>
+                  </div>
+
+                  <div class="role-perm-row" style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05);">
+                    <div>
+                      <div style="font-size:13px; font-weight:600; color:var(--text-heading);">Ses Efekti (Soundboard) Çal</div>
+                      <div style="font-size:11px; color:var(--text-muted);">Ses panosu ses efektlerini odada çalabilir.</div>
+                    </div>
+                    <label class="toggle-switch"><input type="checkbox" class="chk-role-perm" data-perm="use_soundboard"><span class="toggle-slider"></span></label>
+                  </div>
+
+                  <div class="role-perm-row" style="display:flex; justify-content:space-between; align-items:center; padding:8px 0;">
+                    <div>
+                      <div style="font-size:13px; font-weight:600; color:var(--text-heading);">Geçici Ses Odası Oluştur</div>
+                      <div style="font-size:11px; color:var(--text-muted);">"+ Ses Odası Oluştur" kanalına tıklayarak kendine özel geçici oda açabilir.</div>
+                    </div>
+                    <label class="toggle-switch"><input type="checkbox" class="chk-role-perm" data-perm="create_temp_voice"><span class="toggle-slider"></span></label>
+                  </div>
+                </div>
+
+                <div style="margin-top:16px; display:flex; justify-content:flex-end; gap:10px;">
+                  <button type="button" class="btn-primary" id="btnSaveRoleChanges" style="padding:10px 24px;">Rol Değişikliklerini Kaydet</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 3: DENETİM KAYDI -->
+        <div class="guild-tab-panel hidden" id="panelGuildAudit" style="padding:20px; display:flex; flex-direction:column; gap:12px; height:100%; min-height:480px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+            <div>
+              <h4 style="margin:0; font-size:15px; color:var(--text-heading);">📜 Sunucu Denetim Kayıtları</h4>
+              <div style="font-size:11px; color:var(--text-muted);">Bu sunucuda yapılan yönetimsel değişiklikler, rol düzenlemeleri ve moderasyon işlemleri.</div>
+            </div>
+            <button type="button" class="btn-secondary" id="btnRefreshGuildAudit" style="padding:6px 12px; font-size:12px; background:var(--bg-secondary); border:1px solid var(--border-color); display:flex; align-items:center; gap:6px;">
+              <span>🔄</span> Yenile
+            </button>
+          </div>
+          <div class="audit-table-wrap" style="flex:1; max-height:420px; overflow-y:auto; border:1px solid var(--border-color); border-radius:8px; background:var(--bg-tertiary);">
+            <table class="audit-table" style="width:100%;">
+              <thead>
+                <tr style="position:sticky; top:0; z-index:2; background:var(--bg-secondary);">
+                  <th style="width:130px;">Zaman</th>
+                  <th style="width:110px;">Yetkili</th>
+                  <th style="width:130px;">Eylem</th>
+                  <th style="width:120px;">Hedef</th>
+                  <th>Detaylar</th>
+                </tr>
+              </thead>
+              <tbody id="guildAuditTableBody">
+                <tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:20px;">Kayıtlar yükleniyor...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: EKRAN PAYLAŞIMI -->
+  <div class="modal-backdrop" id="modalScreenShare">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title">📺 Ekran ve Ses Paylaşımı Ayarları</h3>
+        <button class="modal-close-btn" id="btnCloseScreenModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="checkbox-group" style="padding: 10px; background: var(--bg-secondary); border-radius: 8px;">
+            <input type="checkbox" id="chkShareAudio" checked>
+            <div>
+              <div class="checkbox-label" style="font-weight:600;">🔊 Sistem ve Oyun Sesini Aktar (Sesli Paylaşım)</div>
+              <div style="font-size:11px; color:var(--text-muted);">Pencere veya tüm ekranın sesini arkadaşlarınız net duyar.</div>
+            </div>
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Çözünürlük & Kare Hızı (FPS)</label>
+          <div class="quality-chips">
+            <div class="quality-chip selected" data-quality="1080p60">
+              <span class="chip-title">🎮 1080p 60 FPS</span>
+              <span class="chip-desc">Oyunlar için akıcı yüksek kalite</span>
+            </div>
+            <div class="quality-chip" data-quality="1080p30">
+              <span class="chip-title">📺 1080p 30 FPS</span>
+              <span class="chip-desc">Standart net görüntü</span>
+            </div>
+            <div class="quality-chip" data-quality="720p60">
+              <span class="chip-title">⚡ 720p 60 FPS</span>
+              <span class="chip-desc">Düşük veri tasarrufu</span>
+            </div>
+            <div class="quality-chip" data-quality="720p30">
+              <span class="chip-title">🍃 720p 30 FPS</span>
+              <span class="chip-desc">Ultra hafif mod</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="btnCancelScreenModal">Vazgeç</button>
+        <button class="btn-primary" id="btnConfirmStartScreen">Paylaşımı Başlat</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ARKADAŞLAR & İSTEKLER -->
+  <div class="modal-backdrop" id="modalFriends">
+    <div class="modal-box" style="max-width:520px;">
+      <div class="modal-header">
+        <h3 class="modal-title">👥 Arkadaşlar & İstekler</h3>
+        <button class="modal-close-btn" id="btnCloseFriendsModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="friends-search-row">
+          <input type="text" class="form-input" id="inputAddFriendUsername" placeholder="Kullanıcı adı girin... (Örn: Oyuncu123)">
+          <button class="btn-primary" id="btnSubmitAddFriend" style="white-space:nowrap; padding:8px 16px;">İstek Gönder</button>
+        </div>
+        <div class="friends-tabs-bar">
+          <button class="friends-tab-btn active" id="tabFriendsAll">Arkadaşlar (<span id="countFriendsAll">0</span>)</button>
+          <button class="friends-tab-btn" id="tabFriendsPending">Bekleyen İstekler (<span id="countFriendsPending">0</span>)</button>
+        </div>
+        <div class="friends-list-container" id="friendsListContainer">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: GELEN BİREBİR ARAMA (DIRECT INCOMING CALL) -->
+  <div class="modal-backdrop" id="modalIncomingCall">
+    <div class="modal-box call-modal-box">
+      <div class="call-avatar-pulse-wrap">
+        <div class="call-avatar-pulse"></div>
+        <div class="avatar call-avatar" id="incomingCallAvatar">O</div>
+      </div>
+      <h3 class="call-caller-name" id="incomingCallerName">Oyuncu</h3>
+      <div class="call-type-subtitle" id="incomingCallType">📞 Birebir Sesli Arama Yapıyor...</div>
+      <div class="call-actions-row">
+        <button class="call-action-btn call-decline" id="btnDeclineCall" title="Reddet">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08a.996.996 0 0 1 0-1.41C2.97 8.98 7.23 7 12 7s9.03 1.98 11.71 4.67c.39.39.39 1.02 0 1.41l-2.48 2.48c-.18.18-.43.29-.71.29s-.52-.11-.7-.28c-.79-.74-1.69-1.36-2.67-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg>
+          <span>Reddet</span>
+        </button>
+        <button class="call-action-btn call-accept" id="btnAcceptCall" title="Cevapla">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56a.977.977 0 0 0-1.01.24l-2.2 2.2a15.053 15.053 0 0 1-6.59-6.59l2.2-2.21a.96.96 0 0 0 .25-1.01A11.36 11.36 0 0 1 8.5 3.92c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1 0 9.39 7.61 17 17 17 .55 0 1-.45 1-1v-3.54c0-.54-.45-.99-1-.99z"/></svg>
+          <span>Cevapla</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: GİDEN BİREBİR ARAMA (DIRECT OUTGOING CALL) -->
+  <div class="modal-backdrop" id="modalOutgoingCall">
+    <div class="modal-box call-modal-box">
+      <div class="call-avatar-pulse-wrap">
+        <div class="call-avatar-pulse"></div>
+        <div class="avatar call-avatar" id="outgoingCallAvatar">O</div>
+      </div>
+      <h3 class="call-caller-name" id="outgoingTargetName">Oyuncu</h3>
+      <div class="call-type-subtitle">Çalıyor... Yanıt bekleniyor</div>
+      <div class="call-actions-row">
+        <button class="call-action-btn call-decline" id="btnCancelOutgoingCall" title="Aramayı Sonlandır">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08a.996.996 0 0 1 0-1.41C2.97 8.98 7.23 7 12 7s9.03 1.98 11.71 4.67c.39.39.39 1.02 0 1.41l-2.48 2.48c-.18.18-.43.29-.71.29s-.52-.11-.7-.28c-.79-.74-1.69-1.36-2.67-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg>
+          <span>Kapat</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLOATING PANEL: AKTİF BİREBİR GÖRÜNTÜLÜ / SESLİ GÖRÜŞME (ACTIVE 1-ON-1 DIRECT CALL) -->
+  <div class="direct-call-active-panel hidden" id="directCallActivePanel">
+    <div class="direct-call-header">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span class="ping-dot" style="background:#00e676;"></span>
+        <span style="font-weight:700; font-size:13px; color:var(--text-heading);" id="directCallPeerName">Oyuncu</span>
+        <span class="direct-call-timer" id="directCallTimer">00:00</span>
+      </div>
+      <div style="display:flex; gap:6px;">
+        <button type="button" class="card-btn" id="btnDirectCallExpand" title="Büyüt / Küçült">⛶</button>
+      </div>
+    </div>
+    <div class="direct-call-video-stage" id="directCallVideoStage">
+      <div class="direct-call-avatar-fallback" id="directCallAvatarFallback">O</div>
+      <video id="directCallRemoteVideo" class="direct-call-remote-video" autoplay playsinline></video>
+      <video id="directCallLocalVideo" class="direct-call-local-video hidden" autoplay playsinline muted></video>
+    </div>
+    <div class="direct-call-controls">
+      <button type="button" class="card-btn" id="btnDirectCallToggleMic" title="Mikrofonu Aç/Kapat">🎙️ Mikrofon</button>
+      <button type="button" class="card-btn" id="btnDirectCallToggleCam" title="Kamerayı Aç/Kapat">📹 Kamera</button>
+      <button type="button" class="card-btn" id="btnDirectCallHangup" style="background:var(--red); color:#fff; border-color:var(--red);" title="Görüşmeyi Sonlandır">📞 Kapat</button>
+    </div>
+  </div>
+
+  <!-- Persistent Music Bot Floating Card (Visible so YouTube embed never gets throttled/paused by browser) -->
+  <div id="bgRoomMusicYt" class="bg-room-music-dock hidden"></div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="js/audio.js?v=4.9"></script>
+  <script src="js/screen.js?v=4.9"></script>
+  <script src="js/webrtc.js?v=4.9"></script>
+  <script src="js/app.js?v=4.9"></script>
+</body>
+</html>

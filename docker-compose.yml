@@ -1,0 +1,52 @@
+services:
+  talkapp:
+    build: .
+    container_name: talkapp-server
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:3000"
+    volumes:
+      # Veritabanı (talkapp.db), yedekler ve yüklenen dosyalar kalıcı olarak saklanır
+      - ./data:/app/data
+      # SSL sertifikaları (HTTPS & WSS için cert.pem ve key.pem)
+      - ./ssl:/app/ssl
+      # Canlı kod ve arayüz dosyaları
+      - ./public:/app/public
+      - ./server.js:/app/server.js
+      - ./ssl-helper.js:/app/ssl-helper.js
+      - ./db.js:/app/db.js
+    environment:
+      - PORT=3000
+      - PUBLIC_IP=${PUBLIC_IP:-127.0.0.1}
+      - SERVER_DOMAIN=${SERVER_DOMAIN:-localhost}
+      - NODE_ENV=${NODE_ENV:-production}
+      - ADMIN_DEFAULT_PASSWORD=${ADMIN_DEFAULT_PASSWORD:-admin123}
+      - TURN_URL=turn:${SERVER_DOMAIN:-localhost}:3478
+      - TURN_USERNAME=${TURN_USERNAME:-talkapp}
+      - TURN_CREDENTIAL=${TURN_CREDENTIAL:-talkapppass}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Coturn: Düşük gecikmeli WebRTC Ses ve Ekran Paylaşımı Röle Sunucusu (NAT Traversal)
+  coturn:
+    image: coturn/coturn:latest
+    container_name: talkapp-turn
+    restart: unless-stopped
+    ports:
+      - "3478:3478/tcp"
+      - "3478:3478/udp"
+      - "49160-49200:49160-49200/udp"
+    command:
+      - -n
+      - --log-file=stdout
+      - --listening-port=3478
+      - --min-port=49160
+      - --max-port=49200
+      - --realm=${SERVER_DOMAIN:-localhost}
+      - --user=${TURN_USERNAME:-talkapp}:${TURN_CREDENTIAL:-talkapppass}
+      - --external-ip=${PUBLIC_IP:-127.0.0.1}
+      - --fingerprint
+      - --lt-cred-mech

@@ -1,0 +1,27 @@
+{
+  "appId": "com.talkapp.messenger",
+  "appName": "TalkApp",
+  "webDir": "public",
+  "bundledWebRuntime": false,
+  "server": {
+    "url": "http://localhost:3000",
+    "cleartext": true,
+    "allowNavigation": [
+      "localhost",
+      "*.duckdns.org",
+      "*.youtube.com",
+      "*.googlevideo.com"
+    ]
+  },
+  "android": {
+    "allowMixedContent": true,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": true
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1500,
+      "backgroundColor": "#1e1f22"
+    }
+  }
+}

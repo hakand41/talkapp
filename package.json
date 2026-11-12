@@ -1,0 +1,26 @@
+{
+  "name": "talkapp",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server.js",
+    "start:https": "node server.js --https",
+    "dev": "node --watch server.js",
+    "ssl:regen": "node -e \"const fs=require('fs'),path=require('path'),{ensureSslCertificates}=require('./ssl-helper');const d=path.join(__dirname,'ssl');fs.rmSync(d,{recursive:true,force:true});const r=ensureSslCertificates(d);console.log('Yeni SSL sertifikasi uretildi:',r.certPath);\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^5.3.0",
+    "web-push": "^3.6.7",
+    "ws": "^8.22.0"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/cli": "^8.5.3",
+    "@capacitor/core": "^8.5.3"
+  }
+}
